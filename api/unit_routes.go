@@ -51,7 +51,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 
 	unit := models.FindUnitByFingerprint(api.DB, enroll.Fingerprint)
 	if unit == nil {
-		log.Info("enrolling new unit for %s: %s", clientAddress, enroll.Identity)
+		log.Info("enrolling new unit for %s (%s): %s", clientAddress, clientCountry, enroll.Identity)
 
 		unit = &models.Unit{
 			Address:     clientAddress,
