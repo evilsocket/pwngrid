@@ -54,44 +54,45 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 
 		unit = &models.Unit{
 			Address:   clientAddress,
-			Identity:  enroll.Identity,
+			Name:  enroll.Name,
+			Fingerprint: enroll.Fingerprint,
 			PublicKey: string(enroll.KeyPair.PublicPEM),
 			Token:     "",
 			CreatedAt: time.Now(),
 		}
 
 		if err = api.DB.Model(&models.Unit{}).Create(unit).Error; err != nil {
-			log.Error("error enrolling %s: %v", unit.Identity, err)
+			log.Error("error enrolling %s: %v", unit.Identity(), err)
 			ERROR(w, http.StatusInternalServerError, ErrEmpty)
 			return
 		}
 	}
 
-	if unit.Identity != enroll.Identity {
-		log.Info("unit changed name: %s -> %s", unit.Identity, enroll.Identity)
-		unit.Identity = enroll.Identity
+	if unit.Name != enroll.Name {
+		log.Info("unit %s changed name: %s -> %s", unit.Identity(), unit.Name, enroll.Name)
+		unit.Name = enroll.Name
 	}
 
 	unit.Address = clientAddress
 	if unit.Token, err = CreateTokenFor(unit); err != nil {
-		log.Error("error creating token for %s: %v", unit.Identity, err)
+		log.Error("error creating token for %s: %v", unit.Identity(), err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
 		return
 	}
 
 	err = api.DB.Model(unit).UpdateColumns(map[string]interface{}{
 		"token":      unit.Token,
-		"identity":   unit.Identity,
+		"name":   unit.Name,
 		"address":    unit.Address,
 		"updated_at": time.Now(),
 	}).Error
 	if err != nil {
-		log.Error("error setting token for %s: %v", unit.Identity, err)
+		log.Error("error setting token for %s: %v", unit.Identity(), err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
 		return
 	}
 
-	log.Info("unit %s enrolled: id:%d address:%s", unit.Identity, unit.ID, unit.Address)
+	log.Info("unit %s enrolled: id:%d address:%s", unit.Identity(), unit.ID, unit.Address)
 
 	JSON(w, http.StatusOK, map[string]string{
 		"token": unit.Token,

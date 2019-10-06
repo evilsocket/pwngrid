@@ -17,6 +17,8 @@ type UnitEnrollmentRequest struct {
 	Signature string `json:"signature"`
 	// parsed from public_key
 	KeyPair *crypto.KeyPair `json:"-"`
+	//
+	Name string `json:"-"`
 	// SHA256(public_key)
 	Fingerprint string `json:"-"`
 }
@@ -28,6 +30,7 @@ func (enroll *UnitEnrollmentRequest) Validate() error {
 		return fmt.Errorf("error parsing the identity string: got %d parts", len(parts))
 	}
 
+	enroll.Name = str.Trim(parts[0])
 	enroll.Fingerprint = str.Trim(strings.ToLower(parts[1]))
 	if len(enroll.Fingerprint) != crypto.Hasher.Size()*2 {
 		return fmt.Errorf("unexpected fingerprint length for %s", enroll.Fingerprint)
