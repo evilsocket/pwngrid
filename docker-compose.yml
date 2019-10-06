@@ -1,0 +1,54 @@
+version: '3'
+services:
+  app:
+    container_name: pwngrid_api_app
+    build: .
+    ports:
+      - 8666:8666
+    restart: on-failure
+    volumes:
+      - api:/usr/src/app/
+    depends_on:
+      - pwngrid-mysql
+    networks:
+      - pwngrid
+
+  pwngrid-mysql:
+    image: mysql:5.7
+    container_name: full_db_mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_HOST=${DB_HOST}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - database_mysql:/var/lib/mysql
+    networks:
+      - pwngrid
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_container
+    depends_on:
+      - pwngrid-mysql
+    environment:
+      - PMA_HOST=pwngrid-mysql
+      - PMA_USER=${DB_USER}
+      - PMA_PORT=${DB_PORT}
+      - PMA_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 9090:80
+    restart: always
+    networks:
+      - pwngrid
+
+volumes:
+  api:
+  database_mysql:
+
+networks:
+  pwngrid:
+    driver: bridge
