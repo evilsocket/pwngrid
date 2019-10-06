@@ -92,7 +92,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("unit %s enrolled: id:%d address:%s", unit.Identity(), unit.ID, unit.Address)
+	log.Debug("unit %s enrolled: id:%d address:%s", unit.Identity(), unit.ID, unit.Address)
 
 	JSON(w, http.StatusOK, map[string]string{
 		"token": unit.Token,
