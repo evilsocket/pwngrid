@@ -27,6 +27,11 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		clientAddress = forwardedFor
 	}
 
+	// https://support.cloudflare.com/hc/en-us/articles/206776727-What-is-True-Client-IP-
+	if trueClient := r.Header.Get("True-Client-IP"); trueClient != "" {
+		clientAddress = trueClient
+	}
+
 	var enroll UnitEnrollmentRequest
 	if err = json.Unmarshal(body, &enroll); err != nil {
 		log.Warning("error while reading enrollment request from %s: %v", clientAddress, err)
