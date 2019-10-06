@@ -40,7 +40,7 @@ signature_b64 = base64.b64encode(signature).decode("ascii")
 
 # print("hash(data) = %s" % ''.join(["%02x" % b for b in hasher.digest()]))
 # print("signature  = %s" % ''.join(["%02x" % b for b in signature]))
-api_address = 'http://127.0.0.1:8666/api/v1/unit/enroll'
+api_address = 'http://api.pwnagotchi.ai/api/v1/unit/enroll'
 enroll = {
     'identity': identity,
     'public_key': pub_key_pem_b64,

@@ -23,6 +23,9 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientAddress := strings.Split(r.RemoteAddr, ":")[0]
+	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		clientAddress = forwardedFor
+	}
 
 	var enroll UnitEnrollmentRequest
 	if err = json.Unmarshal(body, &enroll); err != nil {
