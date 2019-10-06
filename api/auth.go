@@ -24,7 +24,7 @@ func CreateTokenFor(unit *models.Unit) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
 	claims["unit_id"] = unit.ID
-	claims["unit_ident"] = unit.Identity
+	claims["unit_ident"] = unit.Identity()
 	claims["expires_at"] = time.Now().Add(TokenTTL)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
