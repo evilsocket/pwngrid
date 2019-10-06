@@ -34,6 +34,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 
 	// handle ip, ip
 	clientAddress = strings.Trim(strings.Split(clientAddress, ",")[0], " ")
+	clientCountry := r.Header.Get("CF-IPCountry")
 
 	var enroll UnitEnrollmentRequest
 	if err = json.Unmarshal(body, &enroll); err != nil {
@@ -53,12 +54,13 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		log.Info("enrolling new unit for %s: %s", clientAddress, enroll.Identity)
 
 		unit = &models.Unit{
-			Address:   clientAddress,
-			Name:  enroll.Name,
+			Address:     clientAddress,
+			Country:     clientCountry,
+			Name:        enroll.Name,
 			Fingerprint: enroll.Fingerprint,
-			PublicKey: string(enroll.KeyPair.PublicPEM),
-			Token:     "",
-			CreatedAt: time.Now(),
+			PublicKey:   string(enroll.KeyPair.PublicPEM),
+			Token:       "",
+			CreatedAt:   time.Now(),
 		}
 
 		if err = api.DB.Model(&models.Unit{}).Create(unit).Error; err != nil {
@@ -74,6 +76,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	unit.Address = clientAddress
+	unit.Country = clientCountry
 	if unit.Token, err = CreateTokenFor(unit); err != nil {
 		log.Error("error creating token for %s: %v", unit.Identity(), err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
@@ -82,7 +85,8 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 
 	err = api.DB.Model(unit).UpdateColumns(map[string]interface{}{
 		"token":      unit.Token,
-		"name":   unit.Name,
+		"name":       unit.Name,
+		"country":    unit.Country,
 		"address":    unit.Address,
 		"updated_at": time.Now(),
 	}).Error

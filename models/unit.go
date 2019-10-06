@@ -9,6 +9,7 @@ import (
 type Unit struct {
 	ID          uint32    `gorm:"primary_key; auto_increment" json:"id"`
 	Address     string    `gorm:"size:50;not null" json:"address"`
+	Country     string    `gorm:"size:10" json:"country"`
 	Name        string    `gorm:"size:255;not null" json:"name"`
 	Fingerprint string    `gorm:"size:255;not null;unique" json:"identity"`
 	PublicKey   string    `gorm:"size:10000;not null" json:"public_key"`
