@@ -11,12 +11,14 @@ import (
 var (
 	debug   = false
 	address = "0.0.0.0:8666"
+	env = ".env"
 )
 
 func init() {
 	flag.BoolVar(&debug, "debug", debug, "Enable debug logs.")
 	flag.StringVar(&log.Output, "log", log.Output, "Log file path or empty for standard output.")
 	flag.StringVar(&address, "address", address, "API address.")
+	flag.StringVar(&env, "env", env, "Load .env from.")
 }
 
 func main() {
@@ -36,7 +38,7 @@ func main() {
 
 	log.Info("pwngrid v%s starting ...", api.Version)
 
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(env); err != nil {
 		log.Fatal("%v", err)
 	}
 
