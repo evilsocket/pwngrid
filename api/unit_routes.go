@@ -32,6 +32,9 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		clientAddress = trueClient
 	}
 
+	// handle ip, ip
+	clientAddress = strings.Trim(strings.Split(clientAddress, ",")[0], " ")
+
 	var enroll UnitEnrollmentRequest
 	if err = json.Unmarshal(body, &enroll); err != nil {
 		log.Warning("error while reading enrollment request from %s: %v", clientAddress, err)
