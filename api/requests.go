@@ -17,9 +17,8 @@ type UnitEnrollmentRequest struct {
 	Signature string `json:"signature"`
 	// parsed from public_key
 	KeyPair *crypto.KeyPair `json:"-"`
-
 	// SHA256(public_key)
-	fingerprint string
+	Fingerprint string `json:"-"`
 }
 
 func (enroll *UnitEnrollmentRequest) Validate() error {
@@ -29,9 +28,9 @@ func (enroll *UnitEnrollmentRequest) Validate() error {
 		return fmt.Errorf("error parsing the identity string: got %d parts", len(parts))
 	}
 
-	enroll.fingerprint = str.Trim(strings.ToLower(parts[1]))
-	if len(enroll.fingerprint) != crypto.Hasher.Size()*2 {
-		return fmt.Errorf("unexpected fingerprint length for %s", enroll.fingerprint)
+	enroll.Fingerprint = str.Trim(strings.ToLower(parts[1]))
+	if len(enroll.Fingerprint) != crypto.Hasher.Size()*2 {
+		return fmt.Errorf("unexpected fingerprint length for %s", enroll.Fingerprint)
 	}
 
 	// parse the public key as b64 pem
@@ -47,8 +46,8 @@ func (enroll *UnitEnrollmentRequest) Validate() error {
 
 	enroll.PublicKey = string(enroll.KeyPair.PublicPEM)
 
-	if enroll.KeyPair.FingerprintHex != enroll.fingerprint {
-		return fmt.Errorf("fingerprint mismatch: expected:%s got:%s", enroll.KeyPair.FingerprintHex, enroll.fingerprint)
+	if enroll.KeyPair.FingerprintHex != enroll.Fingerprint {
+		return fmt.Errorf("fingerprint mismatch: expected:%s got:%s", enroll.KeyPair.FingerprintHex, enroll.Fingerprint)
 	}
 
 	data := []byte(enroll.Identity)

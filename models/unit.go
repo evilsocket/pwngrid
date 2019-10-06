@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"time"
 )
@@ -15,9 +16,10 @@ type Unit struct {
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-func FindUnitByIdentity(db *gorm.DB, identity string) *Unit {
+func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
 	var unit Unit
-	if err := db.Model(&Unit{}).Where("identity = ?", identity).Take(&unit).Error; err != nil {
+	search := fmt.Sprintf("%%@%s", fingerprint)
+	if err := db.Model(&Unit{}).Where("identity LIKE ?", search).Take(&unit).Error; err != nil {
 		return nil
 	}
 	return &unit
