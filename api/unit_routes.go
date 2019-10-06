@@ -67,6 +67,11 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if unit.Identity != enroll.Identity {
+		log.Info("unit changed name: %s -> %s", unit.Identity, enroll.Identity)
+		unit.Identity = enroll.Identity
+	}
+
 	unit.Address = clientAddress
 	if unit.Token, err = CreateTokenFor(unit); err != nil {
 		log.Error("error creating token for %s: %v", unit.Identity, err)
@@ -76,6 +81,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 
 	err = api.DB.Model(unit).UpdateColumns(map[string]interface{}{
 		"token":      unit.Token,
+		"identity":   unit.Identity,
 		"address":    unit.Address,
 		"updated_at": time.Now(),
 	}).Error
