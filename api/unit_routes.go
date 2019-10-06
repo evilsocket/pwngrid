@@ -34,14 +34,10 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 	if err = enroll.Validate(); err != nil {
 		log.Warning("error while validating enrollment request from %s: %v", clientAddress, err)
 		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
 	}
 
-	err, unit := models.FindUnitByIdentity(api.DB, enroll.Identity)
-	if err != nil {
-		log.Error("error while searching unit %s: %v", enroll.Identity, err)
-		ERROR(w, http.StatusInternalServerError, ErrEmpty)
-	}
-
+	unit := models.FindUnitByIdentity(api.DB, enroll.Identity)
 	if unit == nil {
 		log.Info("enrolling new unit for %s: %s", clientAddress, enroll.Identity)
 
@@ -56,6 +52,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		if err = api.DB.Model(&models.Unit{}).Create(unit).Error; err != nil {
 			log.Error("error enrolling %s: %v", unit.Identity, err)
 			ERROR(w, http.StatusInternalServerError, ErrEmpty)
+			return
 		}
 	}
 
@@ -63,6 +60,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 	if unit.Token, err = CreateTokenFor(unit); err != nil {
 		log.Error("error creating token for %s: %v", unit.Identity, err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
+		return
 	}
 
 	err = api.DB.Model(unit).UpdateColumns(map[string]interface{}{
@@ -73,9 +71,10 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("error setting token for %s: %v", unit.Identity, err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
+		return
 	}
 
-	log.Info("unit %s enrolled: id:%d address:%s token:%s", unit.Identity, unit.ID, unit.Address, unit.Token)
+	log.Info("unit %s enrolled: id:%d address:%s", unit.Identity, unit.ID, unit.Address)
 
 	JSON(w, http.StatusOK, map[string]string{
 		"token": unit.Token,

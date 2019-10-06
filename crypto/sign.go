@@ -36,5 +36,7 @@ func (pair *KeyPair) VerifyMessage(data []byte, signature []byte) error {
 	hasher := Hasher.New()
 	hasher.Write(data)
 	hash := hasher.Sum(nil)
+	// log.Info("hash(data) = %x", hash)
+	// log.Info("signature  = %x", signature)
 	return pair.Verify(signature, Hasher, hash)
 }

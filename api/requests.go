@@ -46,6 +46,8 @@ func (enroll UnitEnrollmentRequest) Validate() error {
 		return fmt.Errorf("error parsing the public key: %v", err)
 	}
 
+	enroll.PublicKey = string(keys.PublicPEM)
+
 	if keys.FingerprintHex != enroll.fingerprint {
 		return fmt.Errorf("fingerprint mismatch: expected:%s got:%s", keys.FingerprintHex, enroll.fingerprint)
 	}

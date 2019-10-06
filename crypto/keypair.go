@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 type KeyPair struct {
@@ -22,7 +22,6 @@ type KeyPair struct {
 	PrivatePEM  []byte
 	PublicPath  string
 	Public      *rsa.PublicKey
-	PublicSSH   ssh.PublicKey
 	PublicPEM   []byte
 	// sha256 of PublicSSH
 	Fingerprint    []byte
@@ -98,12 +97,12 @@ func KeyPairForPath(keysPath string, bits int) (pair *KeyPair, err error) {
 func (pair *KeyPair) setupPublic() (err error) {
 	if pair.PublicPEM, err = pubKeyToPEM(pair.Public); err != nil {
 		return fmt.Errorf("failed converting public key to PEM: %v", err)
-	} else if pair.PublicSSH, err = ssh.NewPublicKey(pair.Public); err != nil {
-		return fmt.Errorf("failed extracting ssh key from rsa: %v", err)
 	}
 
+	pem := strings.TrimRight(string(pair.PublicPEM), "\n")
+
 	hash := Hasher.New()
-	hash.Write(pair.PublicSSH.Marshal())
+	hash.Write([]byte(pem))
 
 	pair.Fingerprint = hash.Sum(nil)
 	pair.FingerprintHex = fmt.Sprintf("%02x", pair.Fingerprint)

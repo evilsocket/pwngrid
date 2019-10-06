@@ -1,7 +1,7 @@
 version: '3'
 services:
   app:
-    container_name: pwngrid_api_app
+    container_name: pwngrid_api
     build: .
     ports:
       - 8666:8666
@@ -15,7 +15,7 @@ services:
 
   pwngrid-mysql:
     image: mysql:5.7
-    container_name: full_db_mysql
+    container_name: pwngrid_mysql
     ports:
       - 3306:3306
     environment:
@@ -31,7 +31,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin_container
+    container_name: pwngrid_phpmyadmin
     depends_on:
       - pwngrid-mysql
     environment:

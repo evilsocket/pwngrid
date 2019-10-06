@@ -10,7 +10,7 @@ import (
 
 var (
 	debug   = false
-	address = "127.0.0.1:8666"
+	address = "0.0.0.0:8666"
 )
 
 func init() {
