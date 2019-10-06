@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
 	"github.com/evilsocket/islazy/str"
@@ -16,14 +15,14 @@ type UnitEnrollmentRequest struct {
 	PublicKey string `json:"public_key"`
 	// BASE64(SIGN(identity, private_key))
 	Signature string `json:"signature"`
+	// parsed from public_key
+	KeyPair *crypto.KeyPair `json:"-"`
 
 	// SHA256(public_key)
 	fingerprint string
-	// parsed from public_key
-	pubKey *rsa.PublicKey
 }
 
-func (enroll UnitEnrollmentRequest) Validate() error {
+func (enroll *UnitEnrollmentRequest) Validate() error {
 	// split the identity into name and fingerprint
 	parts := strings.Split(enroll.Identity, "@")
 	if len(parts) != 2 {
@@ -41,15 +40,15 @@ func (enroll UnitEnrollmentRequest) Validate() error {
 		return fmt.Errorf("error decoding the public key: %v", err)
 	}
 
-	keys, err := crypto.FromPublicPEM(string(pubKeyPEM))
+	enroll.KeyPair, err = crypto.FromPublicPEM(string(pubKeyPEM))
 	if err != nil {
 		return fmt.Errorf("error parsing the public key: %v", err)
 	}
 
-	enroll.PublicKey = string(keys.PublicPEM)
+	enroll.PublicKey = string(enroll.KeyPair.PublicPEM)
 
-	if keys.FingerprintHex != enroll.fingerprint {
-		return fmt.Errorf("fingerprint mismatch: expected:%s got:%s", keys.FingerprintHex, enroll.fingerprint)
+	if enroll.KeyPair.FingerprintHex != enroll.fingerprint {
+		return fmt.Errorf("fingerprint mismatch: expected:%s got:%s", enroll.KeyPair.FingerprintHex, enroll.fingerprint)
 	}
 
 	data := []byte(enroll.Identity)
@@ -58,7 +57,7 @@ func (enroll UnitEnrollmentRequest) Validate() error {
 		return fmt.Errorf("error decoding the signature: %v", err)
 	}
 
-	if err := keys.VerifyMessage(data, signature); err != nil {
+	if err := enroll.KeyPair.VerifyMessage(data, signature); err != nil {
 		return fmt.Errorf("signature verification failed: %s", err)
 	}
 

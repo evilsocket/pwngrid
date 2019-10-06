@@ -44,7 +44,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		unit = &models.Unit{
 			Address:   clientAddress,
 			Identity:  enroll.Identity,
-			PublicKey: enroll.PublicKey,
+			PublicKey: string(enroll.KeyPair.PublicPEM),
 			Token:     "",
 			CreatedAt: time.Now(),
 		}
