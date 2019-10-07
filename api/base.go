@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
 	"net/http"
 
@@ -16,7 +16,7 @@ const Version = "1.0.0"
 
 type API struct {
 	DB     *gorm.DB
-	Router *mux.Router
+	Router *chi.Mux
 }
 
 func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *API) {
@@ -28,13 +28,19 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 	}
 	api.DB.Debug().AutoMigrate(&models.Unit{}, &models.AccessPoint{})
 
-	api.Router = mux.NewRouter()
+	api.Router = chi.NewRouter()
 
-	apiGroup := api.Router.PathPrefix("/api").Subrouter()
-	v1 := apiGroup.PathPrefix("/v1").Subrouter()
+	api.Router.Route("/api", func(r chi.Router) {
+		r.Route("/v1", func(r chi.Router) {
+			r.Route("/unit", func(r chi.Router) {
+				r.Post("/enroll", api.UnitEnroll)
 
-	v1.HandleFunc("/unit/enroll", api.UnitEnroll).Methods("POST")
-	v1.HandleFunc("/unit/report/ap", api.UnitReportAP).Methods("POST")
+				r.Route("/report", func(r chi.Router) {
+					r.Post("/ap", api.UnitReportAP)
+				})
+			})
+		})
+	})
 
 	return
 }
