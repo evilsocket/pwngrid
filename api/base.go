@@ -29,17 +29,14 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 	}
 	api.DB.Debug().AutoMigrate(&models.Unit{})
 
-	api.setupRoutes()
-	return
-}
-
-func (api *API) setupRoutes() {
 	api.Router = mux.NewRouter()
 
 	apiGroup := api.Router.PathPrefix("/api").Subrouter()
 	v1 := apiGroup.PathPrefix("/v1").Subrouter()
 
 	v1.HandleFunc("/unit/enroll", api.UnitEnroll).Methods("POST")
+
+	return
 }
 
 func (api *API) Run(addr string) {

@@ -9,18 +9,15 @@ import (
 )
 
 type UnitEnrollmentRequest struct {
-	// name@SHA256(public_key)
-	Identity string `json:"identity"`
-	// BASE64(public_key.pem)
-	PublicKey string `json:"public_key"`
-	// BASE64(SIGN(identity, private_key))
-	Signature string `json:"signature"`
-	// parsed from public_key
-	KeyPair *crypto.KeyPair `json:"-"`
-	//
-	Name string `json:"-"`
-	// SHA256(public_key)
-	Fingerprint string `json:"-"`
+	Identity    string                 `json:"identity"`   // name@SHA256(public_key)
+	PublicKey   string                 `json:"public_key"` // BASE64(public_key.pem)
+	Signature   string                 `json:"signature"`  // BASE64(SIGN(identity, private_key))
+	Data        map[string]interface{} `json:"data"`       // misc data for the unit
+	KeyPair     *crypto.KeyPair        `json:"-"`          // parsed from public_key
+	Name        string                 `json:"-"`
+	Fingerprint string                 `json:"-"` // SHA256(public_key)
+	Address     string                 `json:"-"`
+	Country     string                 `json:"-"`
 }
 
 func (enroll *UnitEnrollmentRequest) Validate() error {
