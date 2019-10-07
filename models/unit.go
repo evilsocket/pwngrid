@@ -87,7 +87,7 @@ func (u *Unit) updateToken() error {
 	claims["authorized"] = true
 	claims["unit_id"] = u.ID
 	claims["unit_ident"] = u.Identity()
-	claims["expires_at"] = time.Now().Add(TokenTTL).Unix()
+	claims["expires_at"] = int64(time.Now().Add(TokenTTL).Unix())
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
 	if err != nil {
