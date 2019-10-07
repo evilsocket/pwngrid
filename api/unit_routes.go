@@ -90,8 +90,8 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 			unit.Country, ap)
 
 		newAP := models.AccessPoint{
-			ESSID:  ap.ESSID,
-			BSSID:  ap.BSSID,
+			Name:   ap.ESSID,
+			Mac:    ap.BSSID,
 			UnitID: unit.ID,
 		}
 
