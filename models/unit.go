@@ -27,7 +27,7 @@ type Unit struct {
 	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID"`
 }
 
-func FindUnit(db *gorm.DB, id uint32) *Unit {
+func FindUnit(db *gorm.DB, id uint) *Unit {
 	var unit Unit
 	if err := db.Find(&unit, id).Error; err != nil {
 		return nil
