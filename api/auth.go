@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
+	"github.com/jinzhu/gorm"
 	"net/http"
 	"os"
 	"time"
@@ -62,7 +63,7 @@ func validateToken(header string) (jwt.MapClaims, error) {
 	return claims, err
 }
 
-func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
+func Authenticate(db *gorm.DB, w http.ResponseWriter, r *http.Request) *models.Unit{
 	client := clientIP(r)
 	tokenHeader := reqToken(r)
 	if tokenHeader == "" {
