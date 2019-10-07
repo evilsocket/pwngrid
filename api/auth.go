@@ -79,7 +79,7 @@ func Authenticate(db *gorm.DB, w http.ResponseWriter, r *http.Request) *models.U
 		return nil
 	}
 
-	unit := models.FindUnit(nil, claims["user_id"].(uint32))
+	unit := models.FindUnit(db, claims["user_id"].(uint32))
 	if unit == nil {
 		log.Warning("client %s authenticated with unknown claims '%v'", client, claims)
 		ERROR(w, http.StatusUnauthorized, ErrEmpty)
