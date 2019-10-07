@@ -66,21 +66,12 @@ type apReport struct {
 }
 
 func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
+	unit := Authenticate(w, r)
+	if unit == nil {
+		return
+	}
+
 	client := clientIP(r)
-	ctxUnit := r.Context().Value("unit")
-	if ctxUnit == nil {
-		log.Warning("client %s has no context unit", client)
-		ERROR(w, http.StatusUnauthorized, ErrEmpty)
-		return
-	}
-
-	unit, ok := ctxUnit.(*models.Unit)
-	if !ok {
-		log.Warning("client %s has broken context unit", client)
-		ERROR(w, http.StatusUnauthorized, ErrEmpty)
-		return
-	}
-
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)

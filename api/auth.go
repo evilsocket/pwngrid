@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/evilsocket/islazy/log"
@@ -60,33 +59,28 @@ func validateToken(header string) (jwt.MapClaims, error) {
 	return claims, err
 }
 
-func Authenticated(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		client := clientIP(r)
-		tokenHeader := reqToken(r)
-		if tokenHeader == "" {
-			log.Debug("unauthenticated request from %s", client)
-			ERROR(w, http.StatusUnauthorized, ErrEmpty)
-			return
-		}
+func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
+	client := clientIP(r)
+	tokenHeader := reqToken(r)
+	if tokenHeader == "" {
+		log.Debug("unauthenticated request from %s", client)
+		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		return nil
+	}
 
-		claims, err := validateToken(tokenHeader)
-		if err != nil {
-			log.Warning("token error for %s: %v", client, err)
-			ERROR(w, http.StatusUnauthorized, ErrEmpty)
-			return
-		}
+	claims, err := validateToken(tokenHeader)
+	if err != nil {
+		log.Warning("token error for %s: %v", client, err)
+		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		return nil
+	}
 
-		unit := models.FindUnit(nil, claims["user_id"].(uint32))
-		if unit == nil {
-			log.Warning("client %s authenticated with unknown claims '%v'", client, claims)
-			ERROR(w, http.StatusUnauthorized, ErrEmpty)
-			return
-		}
+	unit := models.FindUnit(nil, claims["user_id"].(uint32))
+	if unit == nil {
+		log.Warning("client %s authenticated with unknown claims '%v'", client, claims)
+		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		return nil
+	}
 
-		// r.Context().Value("unit")
-		ctx := context.WithValue(r.Context(), "unit", unit)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	return unit
 }
