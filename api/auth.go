@@ -50,6 +50,7 @@ func validateToken(header string) (jwt.MapClaims, error) {
 		}
 	}
 
+	log.Debug("%+v", claims)
 	if claims["expires_at"].(int64) < time.Now().Unix() {
 		return nil, ErrTokenExpired
 	} else if claims["authorized"].(bool) != true {
