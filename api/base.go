@@ -34,7 +34,10 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 	v1 := apiGroup.PathPrefix("/v1").Subrouter()
 
 	v1.HandleFunc("/unit/enroll", api.UnitEnroll).Methods("POST")
-	v1.HandleFunc("/unit/report/ap", api.UnitReportAP).Methods("POST")
+
+	authenticated := v1.PathPrefix("").Subrouter()
+	authenticated.Use(Authenticated)
+	authenticated.HandleFunc("/unit/report/ap", api.UnitReportAP).Methods("POST")
 
 	return
 }
