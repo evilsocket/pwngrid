@@ -27,6 +27,14 @@ type Unit struct {
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
+func FindUnit(db *gorm.DB, id uint32) *Unit {
+	var unit Unit
+	if err := db.Find(&unit, id).Error; err != nil {
+		return nil
+	}
+	return &unit
+}
+
 func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
 	var unit Unit
 	if err := db.Where("fingerprint = ?", fingerprint).Take(&unit).Error; err != nil {

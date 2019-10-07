@@ -7,7 +7,6 @@ import (
 	"github.com/evilsocket/pwngrid/models"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 var (
@@ -23,18 +22,7 @@ func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, m
 		return err, enroll
 	}
 
-	enroll.Address = strings.Split(r.RemoteAddr, ":")[0]
-	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
-		enroll.Address = forwardedFor
-	}
-
-	// https://support.cloudflare.com/hc/en-us/articles/206776727-What-is-True-Client-IP-
-	if trueClient := r.Header.Get("True-Client-IP"); trueClient != "" {
-		enroll.Address = trueClient
-	}
-
-	// handle "ip, ip"
-	enroll.Address = strings.Trim(strings.Split(enroll.Address, ",")[0], " ")
+	enroll.Address = clientIP(r)
 	enroll.Country = r.Header.Get("CF-IPCountry")
 
 	if err = json.Unmarshal(body, &enroll); err != nil {

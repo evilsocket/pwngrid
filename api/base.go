@@ -2,10 +2,9 @@ package api
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"net/http"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 
