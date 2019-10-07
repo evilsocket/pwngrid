@@ -26,7 +26,7 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 	if api.DB, err = gorm.Open("mysql", dbURL); err != nil {
 		return
 	}
-	api.DB.Debug().AutoMigrate(&models.Unit{})
+	api.DB.Debug().AutoMigrate(&models.Unit{}, &models.AccessPoint{})
 
 	api.Router = mux.NewRouter()
 
@@ -34,6 +34,7 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 	v1 := apiGroup.PathPrefix("/v1").Subrouter()
 
 	v1.HandleFunc("/unit/enroll", api.UnitEnroll).Methods("POST")
+	v1.HandleFunc("/unit/report/ap", api.UnitReportAP).Methods("POST")
 
 	return
 }

@@ -15,16 +15,16 @@ const (
 )
 
 type Unit struct {
-	ID          uint32    `gorm:"primary_key; auto_increment" json:"-"`
-	Address     string    `gorm:"size:50;not null" json:"-"`
-	Country     string    `gorm:"size:10" json:"country"`
-	Name        string    `gorm:"size:255;not null" json:"name"`
-	Fingerprint string    `gorm:"size:255;not null;unique" json:"fingerprint"`
-	PublicKey   string    `gorm:"size:10000;not null" json:"public_key"`
-	Token       string    `gorm:"size:10000;not null" json:"-"`
-	Data        string    `gorm:"size:10000;not null" json:"data"`
-	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	gorm.Model
+
+	Address      string        `gorm:"size:50;not null" json:"-"`
+	Country      string        `gorm:"size:10" json:"country"`
+	Name         string        `gorm:"size:255;not null" json:"name"`
+	Fingerprint  string        `gorm:"size:255;not null;unique" json:"fingerprint"`
+	PublicKey    string        `gorm:"size:10000;not null" json:"public_key"`
+	Token        string        `gorm:"size:10000;not null" json:"-"`
+	Data         string        `gorm:"size:10000;not null" json:"data"`
+	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID"`
 }
 
 func FindUnit(db *gorm.DB, id uint32) *Unit {
@@ -72,6 +72,14 @@ func EnrollUnit(db *gorm.DB, enroll EnrollmentRequest) (err error, unit *Unit) {
 
 func (u Unit) Identity() string {
 	return fmt.Sprintf("%s@%s", u.Name, u.Fingerprint)
+}
+
+func (u Unit) FindAccessPoint(db *gorm.DB, essid, bssid string) *AccessPoint {
+	var ap AccessPoint
+	if err := db.Where("unit_id = ? AND bssid = ?", u.ID, bssid).Take(&ap).Error; err != nil {
+		return nil
+	}
+	return &ap
 }
 
 func (u *Unit) updateToken() error {

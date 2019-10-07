@@ -59,3 +59,63 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		"token": unit.Token,
 	})
 }
+
+type apReport struct {
+	ESSID string `json:"essid"`
+	BSSID string `json:"bssid"`
+}
+
+func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
+	client := clientIP(r)
+	ctxUnit := r.Context().Value("unit")
+	if ctxUnit == nil {
+		log.Warning("client %s has no context unit", client)
+		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		return
+	}
+
+	unit, ok := ctxUnit.(*models.Unit)
+	if !ok {
+		log.Warning("client %s has broken context unit", client)
+		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var ap apReport
+	if err = json.Unmarshal(body, &ap); err != nil {
+		log.Warning("error while reading wifi ap from %s: %v", client, err)
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if existing := unit.FindAccessPoint(api.DB, ap.ESSID, ap.BSSID); existing == nil {
+		log.Info("unit %s (%s %s) reporting new wifi access point %v", unit.Identity(), unit.Address,
+			unit.Country, ap)
+
+		newAP := models.AccessPoint{
+			ESSID:  ap.ESSID,
+			BSSID:  ap.BSSID,
+			UnitID: unit.ID,
+		}
+
+		if err := api.DB.Create(&newAP).Error; err != nil {
+			log.Warning("%v", err)
+			ERROR(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else if err := api.DB.Save(existing).Error; err != nil {
+		log.Warning("%v", err)
+		ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+	})
+}
