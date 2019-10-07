@@ -14,8 +14,8 @@ var (
 	ErrEmpty = errors.New("")
 )
 
-func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, UnitEnrollmentRequest) {
-	var enroll UnitEnrollmentRequest
+func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, models.EnrollmentRequest) {
+	var enroll models.EnrollmentRequest
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {

@@ -1,4 +1,4 @@
-package api
+package models
 
 import (
 	"encoding/base64"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type UnitEnrollmentRequest struct {
+type EnrollmentRequest struct {
 	Identity    string                 `json:"identity"`   // name@SHA256(public_key)
 	PublicKey   string                 `json:"public_key"` // BASE64(public_key.pem)
 	Signature   string                 `json:"signature"`  // BASE64(SIGN(identity, private_key))
@@ -20,7 +20,7 @@ type UnitEnrollmentRequest struct {
 	Country     string                 `json:"-"`
 }
 
-func (enroll *UnitEnrollmentRequest) Validate() error {
+func (enroll *EnrollmentRequest) Validate() error {
 	// split the identity into name and fingerprint
 	parts := strings.Split(enroll.Identity, "@")
 	if len(parts) != 2 {

@@ -3,10 +3,15 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/evilsocket/islazy/log"
-	"github.com/evilsocket/pwngrid/api"
 	"github.com/jinzhu/gorm"
+	"os"
 	"time"
+)
+
+const (
+	TokenTTL = time.Minute * 30
 )
 
 type Unit struct {
@@ -30,7 +35,7 @@ func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
 	return &unit
 }
 
-func EnrollUnit(db *gorm.DB, enroll api.UnitEnrollmentRequest) (err error, unit *Unit) {
+func EnrollUnit(db *gorm.DB, enroll EnrollmentRequest) (err error, unit *Unit) {
 	if unit = FindUnitByFingerprint(db, enroll.Fingerprint); unit == nil {
 		log.Info("enrolling new unit for %s (%s): %s", enroll.Address, enroll.Country, enroll.Identity)
 
@@ -47,12 +52,11 @@ func EnrollUnit(db *gorm.DB, enroll api.UnitEnrollmentRequest) (err error, unit 
 		}
 	}
 
-	token, err := api.CreateTokenFor(unit)
-	if err != nil {
+	if err := unit.updateToken(); err != nil {
 		return fmt.Errorf("error creating token for %s: %v", unit.Identity(), err), nil
 	}
 
-	if err = unit.UpdateWith(db, token, enroll); err != nil {
+	if err = unit.UpdateWith(db, enroll); err != nil {
 		return fmt.Errorf("error setting token for %s: %v", unit.Identity(), err), nil
 	}
 	return nil, unit
@@ -62,7 +66,22 @@ func (u Unit) Identity() string {
 	return fmt.Sprintf("%s@%s", u.Name, u.Fingerprint)
 }
 
-func (u *Unit) UpdateWith(db *gorm.DB, token string, enroll api.UnitEnrollmentRequest) error {
+func (u *Unit) updateToken() error {
+	claims := jwt.MapClaims{}
+	claims["authorized"] = true
+	claims["unit_id"] = u.ID
+	claims["unit_ident"] = u.Identity()
+	claims["expires_at"] = time.Now().Add(TokenTTL)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
+	if err != nil {
+		return err
+	}
+	u.Token = signed
+	return nil
+}
+
+func (u *Unit) UpdateWith(db *gorm.DB, enroll EnrollmentRequest) error {
 	data, err := json.Marshal(enroll.Data)
 	if err != nil {
 		return err
@@ -75,7 +94,6 @@ func (u *Unit) UpdateWith(db *gorm.DB, token string, enroll api.UnitEnrollmentRe
 	u.Name = enroll.Name
 	u.Address = enroll.Address
 	u.Country = enroll.Country
-	u.Token = token
 	u.Data = string(data)
 
 	return db.Save(u).Error
