@@ -76,9 +76,13 @@ func (u Unit) Identity() string {
 
 func (u Unit) FindAccessPoint(db *gorm.DB, essid, bssid string) *AccessPoint {
 	var ap AccessPoint
-	if err := db.Where("unit_id = ? AND bssid = ?", u.ID, bssid).Take(&ap).Error; err != nil {
-		return nil
+
+	if err := db.Where("unit_id = ? AND name = ? AND mac = ?", u.ID, essid, bssid).Take(&ap).Error; err != nil {
+		if err := db.Where("unit_id = ? AND mac = ?", u.ID, bssid).Take(&ap).Error; err != nil {
+			return nil
+		}
 	}
+
 	return &ap
 }
 
