@@ -144,3 +144,19 @@ func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
 		"units": units,
 	})
 }
+
+type byCountry struct {
+	Country string `json:"country"`
+	Count   int    `json:"units"`
+}
+
+func (api *API) UnitsByCountry(w http.ResponseWriter, r *http.Request) {
+	results := make([]byCountry, 0)
+	if err := api.DB.Raw("SELECT country,COUNT(id) AS count FROM units GROUP BY country ORDER BY count DESC").Scan(&results).Error; err != nil {
+		log.Warning("%v", err)
+		ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	JSON(w, http.StatusOK, results)
+}

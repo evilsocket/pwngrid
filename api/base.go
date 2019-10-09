@@ -30,7 +30,10 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Get("/units", api.ListUnits)
+			r.Route("/units", func(r chi.Router) {
+				r.Get("/", api.ListUnits)
+				r.Get("/by_country", api.UnitsByCountry)
+			})
 
 			r.Route("/unit", func(r chi.Router) {
 				r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
