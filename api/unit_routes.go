@@ -140,8 +140,9 @@ func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
 	}, &units)
 
 	JSON(w, http.StatusOK, map[string]interface{}{
-		"pages": paginator.TotalPage,
-		"units": units,
+		"records": paginator.TotalRecord,
+		"pages":   paginator.TotalPage,
+		"units":   units,
 	})
 }
 
