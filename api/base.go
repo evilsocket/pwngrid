@@ -28,7 +28,11 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 
 	api.Router = chi.NewRouter()
 
+	api.Router.Use(CORS)
+
 	api.Router.Route("/api", func(r chi.Router) {
+		r.Options("/", corsRoute)
+
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/units", func(r chi.Router) {
 				r.Get("/", api.ListUnits)
