@@ -6,6 +6,7 @@ import (
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
+	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
 )
@@ -110,6 +111,16 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 	})
+}
+
+func (api *API) ShowUnit(w http.ResponseWriter, r *http.Request) {
+	unitFingerprint := chi.URLParam(r, "fingerprint")
+	if unit := models.FindUnitByFingerprint(api.DB, unitFingerprint); unit == nil {
+		ERROR(w, http.StatusNotFound, ErrEmpty)
+		return
+	} else {
+		JSON(w, http.StatusOK, unit)
+	}
 }
 
 func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {

@@ -39,7 +39,9 @@ func FindUnit(db *gorm.DB, id uint) *Unit {
 
 func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
 	var unit Unit
-	if err := db.Where("fingerprint = ?", fingerprint).Take(&unit).Error; err != nil {
+	if fingerprint == "" {
+		return nil
+	} else if err := db.Where("fingerprint = ?", fingerprint).Take(&unit).Error; err != nil {
 		return nil
 	}
 	return &unit
