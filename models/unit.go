@@ -29,6 +29,19 @@ type Unit struct {
 	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID" json:"-"`
 }
 
+type UnitsByCountry struct {
+	Country string `json:"country"`
+	Count   int    `json:"units"`
+}
+
+func GetUnitsByCountry(db *gorm.DB) ([]UnitsByCountry, error){
+	results := make([]UnitsByCountry, 0)
+	if err := db.Raw("SELECT country,COUNT(id) AS count FROM units GROUP BY country ORDER BY count DESC").Scan(&results).Error; err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 func FindUnit(db *gorm.DB, id uint) *Unit {
 	var unit Unit
 	if err := db.Find(&unit, id).Error; err != nil {
