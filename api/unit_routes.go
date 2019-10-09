@@ -97,12 +97,12 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := models.Create(&newAP).Error; err != nil {
-			log.Warning("%v", err)
+			log.Warning("error creating ap %v: %v", newAP, err)
 			ERROR(w, http.StatusInternalServerError, err)
 			return
 		}
 	} else if err := models.Update(existing).Error; err != nil {
-		log.Warning("%v", err)
+		log.Warning("error updating ap %v: %v", existing, err)
 		ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -140,7 +140,7 @@ func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
 
 func (api *API) UnitsByCountry(w http.ResponseWriter, r *http.Request) {
 	if results, err := models.GetUnitsByCountry(); err != nil {
-		log.Warning("%v", err)
+		log.Warning("error getting units by country: %v", err)
 		ERROR(w, http.StatusInternalServerError, err)
 		return
 	} else {
