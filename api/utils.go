@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/evilsocket/islazy/log"
@@ -33,6 +35,14 @@ func reqToken(r *http.Request) string {
 		return parts[1]
 	}
 	return ""
+}
+
+func pageNum(r *http.Request) (int, error) {
+	pageParam := chi.URLParam(r, "p")
+	if pageParam == "" {
+		pageParam = "1"
+	}
+	return strconv.Atoi(pageParam)
 }
 
 func JSON(w http.ResponseWriter, statusCode int, data interface{}) {

@@ -15,8 +15,10 @@ const (
 )
 
 type Unit struct {
-	gorm.Model
-
+	ID           uint          `gorm:"primary_key" json:"-"`
+	CreatedAt    time.Time     `json:"enrolled_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	DeletedAt    *time.Time    `sql:"index" json:"-"`
 	Address      string        `gorm:"size:50;not null" json:"-"`
 	Country      string        `gorm:"size:10" json:"country"`
 	Name         string        `gorm:"size:255;not null" json:"name"`
@@ -24,7 +26,7 @@ type Unit struct {
 	PublicKey    string        `gorm:"size:10000;not null" json:"public_key"`
 	Token        string        `gorm:"size:10000;not null" json:"-"`
 	Data         string        `gorm:"size:10000;not null" json:"data"`
-	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID"`
+	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID" json:"-"`
 }
 
 func FindUnit(db *gorm.DB, id uint) *Unit {

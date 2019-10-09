@@ -30,6 +30,8 @@ func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *A
 
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
+			r.Get("/units", api.ListUnits)
+
 			r.Route("/unit", func(r chi.Router) {
 				r.Post("/enroll", api.UnitEnroll)
 

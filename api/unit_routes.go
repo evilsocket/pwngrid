@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
 	"io/ioutil"
@@ -108,5 +109,27 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+	})
+}
+
+func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
+	page, err := pageNum(r)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var units []models.Unit
+
+	paginator := pagination.Paging(&pagination.Param{
+		DB:      api.DB,
+		Page:    page,
+		Limit:   512,
+		OrderBy: []string{"id desc"},
+	}, &units)
+
+	JSON(w, http.StatusOK, map[string]interface{}{
+		"pages": paginator.TotalPage,
+		"units": units,
 	})
 }
