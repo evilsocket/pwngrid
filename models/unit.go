@@ -120,3 +120,33 @@ func (u *Unit) UpdateWith(db *gorm.DB, enroll EnrollmentRequest) error {
 
 	return db.Save(u).Error
 }
+
+type unitJSON struct {
+	EnrolledAt  time.Time              `json:"enrolled_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
+	Country     string                 `json:"country"`
+	Name        string                 `json:"name"`
+	Fingerprint string                 `json:"fingerprint"`
+	PublicKey   string                 `json:"public_key"`
+	Data        map[string]interface{} `json:"data"`
+}
+
+func (u *Unit) MarshalJSON() ([]byte, error) {
+	doc := unitJSON{
+		EnrolledAt:  u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+		Country:     u.Country,
+		Name:        u.Name,
+		Fingerprint: u.Fingerprint,
+		PublicKey:   u.PublicKey,
+		Data:        map[string]interface{}{},
+	}
+
+	if u.Data != "" {
+		if err := json.Unmarshal([]byte(u.Data), &doc.Data); err != nil {
+			return nil, err
+		}
+	}
+
+	return json.Marshal(doc)
+}
