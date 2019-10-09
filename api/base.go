@@ -12,8 +12,6 @@ import (
 	"github.com/evilsocket/pwngrid/models"
 )
 
-const Version = "1.0.0"
-
 type API struct {
 	DB     *gorm.DB
 	Router *chi.Mux
