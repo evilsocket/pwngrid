@@ -101,7 +101,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 			ERROR(w, http.StatusInternalServerError, err)
 			return
 		}
-	} else if err := models.Update(*existing).Error; err != nil {
+	} else if err := models.Update(existing).Error; err != nil {
 		log.Warning("error updating ap %v: %v", existing, err)
 		ERROR(w, http.StatusInternalServerError, err)
 		return

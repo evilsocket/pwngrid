@@ -23,5 +23,5 @@ func Create(v interface{}) *gorm.DB {
 }
 
 func Update(v interface{}) *gorm.DB {
-	return db.Update(v)
+	return db.Model(v).Update(v)
 }
