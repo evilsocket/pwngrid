@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
-	"github.com/jinzhu/gorm"
 	"net/http"
 	"os"
 	"time"
@@ -63,7 +62,7 @@ func validateToken(header string) (jwt.MapClaims, error) {
 	return claims, err
 }
 
-func Authenticate(db *gorm.DB, w http.ResponseWriter, r *http.Request) *models.Unit{
+func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
 	client := clientIP(r)
 	tokenHeader := reqToken(r)
 	if tokenHeader == "" {
@@ -80,7 +79,7 @@ func Authenticate(db *gorm.DB, w http.ResponseWriter, r *http.Request) *models.U
 	}
 
 	log.Debug("claims[unit_id] = %+v", claims["unit_id"])
-	unit := models.FindUnit(db, uint(claims["unit_id"].(float64)))
+	unit := models.FindUnit(uint(claims["unit_id"].(float64)))
 	if unit == nil {
 		log.Warning("client %s authenticated with unknown claims '%v'", client, claims)
 		ERROR(w, http.StatusUnauthorized, ErrEmpty)

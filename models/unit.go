@@ -3,9 +3,9 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/evilsocket/islazy/log"
-	"github.com/jinzhu/gorm"
 	"os"
 	"time"
 )
@@ -34,7 +34,7 @@ type UnitsByCountry struct {
 	Count   int    `json:"units"`
 }
 
-func GetUnitsByCountry(db *gorm.DB) ([]UnitsByCountry, error){
+func GetUnitsByCountry() ([]UnitsByCountry, error) {
 	results := make([]UnitsByCountry, 0)
 	if err := db.Raw("SELECT country,COUNT(id) AS count FROM units GROUP BY country ORDER BY count DESC").Scan(&results).Error; err != nil {
 		return nil, err
@@ -42,7 +42,17 @@ func GetUnitsByCountry(db *gorm.DB) ([]UnitsByCountry, error){
 	return results, nil
 }
 
-func FindUnit(db *gorm.DB, id uint) *Unit {
+func GetPagedUnits(page int) (units []Unit, total int, pages int) {
+	paginator := pagination.Paging(&pagination.Param{
+		DB:      db,
+		Page:    page,
+		Limit:   512,
+		OrderBy: []string{"id desc"},
+	}, &units)
+	return units, paginator.TotalRecord, paginator.TotalPage
+}
+
+func FindUnit(id uint) *Unit {
 	var unit Unit
 	if err := db.Find(&unit, id).Error; err != nil {
 		return nil
@@ -50,7 +60,7 @@ func FindUnit(db *gorm.DB, id uint) *Unit {
 	return &unit
 }
 
-func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
+func FindUnitByFingerprint(fingerprint string) *Unit {
 	var unit Unit
 	if fingerprint == "" {
 		return nil
@@ -60,8 +70,8 @@ func FindUnitByFingerprint(db *gorm.DB, fingerprint string) *Unit {
 	return &unit
 }
 
-func EnrollUnit(db *gorm.DB, enroll EnrollmentRequest) (err error, unit *Unit) {
-	if unit = FindUnitByFingerprint(db, enroll.Fingerprint); unit == nil {
+func EnrollUnit(enroll EnrollmentRequest) (err error, unit *Unit) {
+	if unit = FindUnitByFingerprint(enroll.Fingerprint); unit == nil {
 		log.Info("enrolling new unit for %s (%s): %s", enroll.Address, enroll.Country, enroll.Identity)
 
 		unit = &Unit{
@@ -81,7 +91,7 @@ func EnrollUnit(db *gorm.DB, enroll EnrollmentRequest) (err error, unit *Unit) {
 		return fmt.Errorf("error creating token for %s: %v", unit.Identity(), err), nil
 	}
 
-	if err = unit.UpdateWith(db, enroll); err != nil {
+	if err = unit.UpdateWith(enroll); err != nil {
 		return fmt.Errorf("error setting token for %s: %v", unit.Identity(), err), nil
 	}
 	return nil, unit
@@ -91,7 +101,7 @@ func (u Unit) Identity() string {
 	return fmt.Sprintf("%s@%s", u.Name, u.Fingerprint)
 }
 
-func (u Unit) FindAccessPoint(db *gorm.DB, essid, bssid string) *AccessPoint {
+func (u Unit) FindAccessPoint(essid, bssid string) *AccessPoint {
 	var ap AccessPoint
 
 	if err := db.Where("unit_id = ? AND name = ? AND mac = ?", u.ID, essid, bssid).Take(&ap).Error; err != nil {
@@ -118,7 +128,7 @@ func (u *Unit) updateToken() error {
 	return nil
 }
 
-func (u *Unit) UpdateWith(db *gorm.DB, enroll EnrollmentRequest) error {
+func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 	data, err := json.Marshal(enroll.Data)
 	if err != nil {
 		return err
@@ -144,6 +154,7 @@ type unitJSON struct {
 	Fingerprint string                 `json:"fingerprint"`
 	PublicKey   string                 `json:"public_key"`
 	Data        map[string]interface{} `json:"data"`
+	Networks    int                    `json:"networks"`
 }
 
 func (u *Unit) MarshalJSON() ([]byte, error) {
@@ -155,6 +166,7 @@ func (u *Unit) MarshalJSON() ([]byte, error) {
 		Fingerprint: u.Fingerprint,
 		PublicKey:   u.PublicKey,
 		Data:        map[string]interface{}{},
+		Networks:    db.Model(u).Association("AccessPoints").Count(),
 	}
 
 	if u.Data != "" {

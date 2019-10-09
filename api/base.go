@@ -1,35 +1,23 @@
 package api
 
 import (
-	"fmt"
 	"github.com/go-chi/chi"
-	"github.com/jinzhu/gorm"
 	"net/http"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 
 	"github.com/evilsocket/islazy/log"
-	"github.com/evilsocket/pwngrid/models"
 )
 
 type API struct {
-	DB     *gorm.DB
 	Router *chi.Mux
 }
 
-func Setup(DbUser, DbPassword, DbPort, DbHost, DbName string) (err error, api *API) {
-	log.Info("connecting to %s:%s ...", DbHost, DbPort)
+func Setup() (err error, api *API) {
 	api = &API{}
-	dbURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DbUser, DbPassword, DbHost, DbPort, DbName)
-	if api.DB, err = gorm.Open("mysql", dbURL); err != nil {
-		return
-	}
-	api.DB.Debug().AutoMigrate(&models.Unit{}, &models.AccessPoint{})
 
 	api.Router = chi.NewRouter()
-
 	api.Router.Use(CORS)
-
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Options("/", corsRoute)
 

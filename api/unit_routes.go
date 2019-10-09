@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
 	"github.com/go-chi/chi"
@@ -48,7 +47,7 @@ func (api *API) UnitEnroll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, unit := models.EnrollUnit(api.DB, enroll)
+	err, unit := models.EnrollUnit(enroll)
 	if err != nil {
 		log.Error("%v", err)
 		ERROR(w, http.StatusInternalServerError, ErrEmpty)
@@ -68,7 +67,7 @@ type apReport struct {
 }
 
 func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
-	unit := Authenticate(api.DB, w, r)
+	unit := Authenticate(w, r)
 	if unit == nil {
 		return
 	}
@@ -87,7 +86,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing := unit.FindAccessPoint(api.DB, ap.ESSID, ap.BSSID); existing == nil {
+	if existing := unit.FindAccessPoint(ap.ESSID, ap.BSSID); existing == nil {
 		log.Info("unit %s (%s %s) reporting new wifi access point %v", unit.Identity(), unit.Address,
 			unit.Country, ap)
 
@@ -97,12 +96,12 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 			UnitID: unit.ID,
 		}
 
-		if err := api.DB.Create(&newAP).Error; err != nil {
+		if err := models.Create(&newAP).Error; err != nil {
 			log.Warning("%v", err)
 			ERROR(w, http.StatusInternalServerError, err)
 			return
 		}
-	} else if err := api.DB.Save(existing).Error; err != nil {
+	} else if err := models.Update(existing).Error; err != nil {
 		log.Warning("%v", err)
 		ERROR(w, http.StatusInternalServerError, err)
 		return
@@ -115,7 +114,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 
 func (api *API) ShowUnit(w http.ResponseWriter, r *http.Request) {
 	unitFingerprint := chi.URLParam(r, "fingerprint")
-	if unit := models.FindUnitByFingerprint(api.DB, unitFingerprint); unit == nil {
+	if unit := models.FindUnitByFingerprint(unitFingerprint); unit == nil {
 		ERROR(w, http.StatusNotFound, ErrEmpty)
 		return
 	} else {
@@ -130,24 +129,17 @@ func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var units []models.Unit
-
-	paginator := pagination.Paging(&pagination.Param{
-		DB:      api.DB,
-		Page:    page,
-		Limit:   512,
-		OrderBy: []string{"id desc"},
-	}, &units)
+	units, total, pages := models.GetPagedUnits(page)
 
 	JSON(w, http.StatusOK, map[string]interface{}{
-		"records": paginator.TotalRecord,
-		"pages":   paginator.TotalPage,
+		"records": total,
+		"pages":   pages,
 		"units":   units,
 	})
 }
 
 func (api *API) UnitsByCountry(w http.ResponseWriter, r *http.Request) {
-	if results, err := models.GetUnitsByCountry(api.DB); err != nil {
+	if results, err := models.GetUnitsByCountry(); err != nil {
 		log.Warning("%v", err)
 		ERROR(w, http.StatusInternalServerError, err)
 		return

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/api"
+	"github.com/evilsocket/pwngrid/models"
 	"github.com/joho/godotenv"
 	"os"
 )
@@ -42,8 +43,12 @@ func main() {
 		log.Fatal("%v", err)
 	}
 
-	if err, server := api.Setup(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"),
+	if err := models.Setup(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"),
 		os.Getenv("DB_HOST"), os.Getenv("DB_NAME")); err != nil {
+		log.Fatal("%v", err)
+	}
+
+	if err, server := api.Setup(); err != nil {
 		log.Fatal("%v", err)
 	} else {
 		server.Run(address)
