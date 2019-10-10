@@ -67,14 +67,14 @@ func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
 	tokenHeader := reqToken(r)
 	if tokenHeader == "" {
 		log.Debug("unauthenticated request from %s", client)
-		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		ERROR(w, http.StatusUnauthorized, ErrUnauthorized)
 		return nil
 	}
 
 	claims, err := validateToken(tokenHeader)
 	if err != nil {
 		log.Warning("token error for %s: %v", client, err)
-		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		ERROR(w, http.StatusUnauthorized, ErrUnauthorized)
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
 	unit := models.FindUnit(uint(claims["unit_id"].(float64)))
 	if unit == nil {
 		log.Warning("client %s authenticated with unknown claims '%v'", client, claims)
-		ERROR(w, http.StatusUnauthorized, ErrEmpty)
+		ERROR(w, http.StatusUnauthorized, ErrUnauthorized)
 		return nil
 	}
 

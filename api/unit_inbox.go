@@ -15,7 +15,6 @@ import (
 func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
 	unit := Authenticate(w, r)
 	if unit == nil {
-		ERROR(w, http.StatusForbidden, ErrEmpty)
 		return
 	}
 
@@ -37,7 +36,6 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	// authenticate source unit
 	srcUnit := Authenticate(w, r)
 	if srcUnit == nil {
-		ERROR(w, http.StatusForbidden, ErrEmpty)
 		return
 	}
 

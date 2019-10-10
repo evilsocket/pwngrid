@@ -16,7 +16,6 @@ type apReport struct {
 func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	unit := Authenticate(w, r)
 	if unit == nil {
-		ERROR(w, http.StatusForbidden, ErrEmpty)
 		return
 	}
 
