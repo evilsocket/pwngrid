@@ -32,3 +32,7 @@ func Create(v interface{}) *gorm.DB {
 func Update(v interface{}) *gorm.DB {
 	return db.Model(v).Update(v)
 }
+
+func UpdateFields(v interface{}, fields map[string]interface{}) *gorm.DB {
+	return db.Model(v).Updates(fields)
+}

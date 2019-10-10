@@ -34,6 +34,18 @@ func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// we need this because the models.Message structure doesn't not export data and signature for fast listing.
+type fullMessage struct {
+	ID         uint       `json:"id"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	DeletedAt  *time.Time `json:"deleted_at"`
+	SeenAt     *time.Time `json:"seen_at"`
+	Sender     string     `json:"sender"`
+	Data       string     `json:"data"`
+	Signature  string     `json:"signature"`
+}
+
 func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
 	unit := Authenticate(w, r)
 	if unit == nil {
@@ -50,7 +62,16 @@ func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusNotFound, ErrEmpty)
 		return
 	} else {
-		JSON(w, http.StatusOK, message)
+		JSON(w, http.StatusOK, fullMessage{
+			ID:        message.ID,
+			CreatedAt: message.CreatedAt,
+			UpdatedAt: message.UpdatedAt,
+			DeletedAt: message.DeletedAt,
+			SeenAt:    message.SeenAt,
+			Sender:    message.Sender,
+			Data:      message.Data,
+			Signature: message.Signature,
+		})
 	}
 }
 
@@ -72,26 +93,22 @@ func (api *API) MarkInboxMessage(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusNotFound, ErrEmpty)
 		return
 	} else if markAs == "seen" {
-		message.SeenAt = &now
-		if err := models.Update(message).Error; err != nil {
+		if err := models.UpdateFields(message, map[string]interface{}{"seen_at": &now}).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "unseen" {
-		message.SeenAt = nil
-		if err := models.Update(message).Error; err != nil {
+		if err := models.UpdateFields(message, map[string]interface{}{"seen_at": nil}).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "deleted" {
-		message.DeletedAt = &now
-		if err := models.Update(message).Error; err != nil {
+		if err := models.UpdateFields(message, map[string]interface{}{"deleted_at": &now}).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "restored" {
-		message.DeletedAt = nil
-		if err := models.Update(message).Error; err != nil {
+		if err := models.UpdateFields(message, map[string]interface{}{"deleted_at": nil}).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}

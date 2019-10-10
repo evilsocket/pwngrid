@@ -18,6 +18,6 @@ type Message struct {
 	SenderID   uint       `json:"-"`
 	ReceiverID uint       `json:"-"`
 	Sender     string     `gorm:"size:255;not null" json:"sender"`
-	Data       string     `gorm:"size:512000;not null" json:"data"`
-	Signature  string     `gorm:"size:10000;not null" json:"signature"`
+	Data       string     `gorm:"size:512000;not null" json:"-"`
+	Signature  string     `gorm:"size:10000;not null" json:"-"`
 }
