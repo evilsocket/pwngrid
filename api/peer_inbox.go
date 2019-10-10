@@ -17,7 +17,13 @@ var (
 
 // /api/v1/inbox
 func (api *API) PeerGetInbox(w http.ResponseWriter, r *http.Request) {
-	obj, err := api.Client.Inbox()
+	page, err := pageNum(r)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	obj, err := api.Client.Inbox(page)
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
 	"strings"
@@ -44,7 +43,7 @@ func reqToken(r *http.Request) string {
 }
 
 func pageNum(r *http.Request) (int, error) {
-	pageParam := chi.URLParam(r, "p")
+	pageParam := r.URL.Query().Get("p")
 	if pageParam == "" {
 		pageParam = "1"
 	}

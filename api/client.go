@@ -86,7 +86,6 @@ func (c *Client) enroll() error {
 		return err
 	}
 
-
 	c.tokenAt = time.Now()
 	c.token = obj["token"].(string)
 	log.Debug("new token: %s", c.token)
@@ -94,7 +93,7 @@ func (c *Client) enroll() error {
 	return nil
 }
 
-func (c *Client) request(method string, path string, data interface{}, auth bool)(map[string]interface{}, error) {
+func (c *Client) request(method string, path string, data interface{}, auth bool) (map[string]interface{}, error) {
 	url := fmt.Sprintf("%s%s", Endpoint, path)
 	err := (error)(nil)
 	started := time.Now()
@@ -147,7 +146,7 @@ func (c *Client) request(method string, path string, data interface{}, auth bool
 
 	return obj, err
 }
-func (c *Client) Request(method string, path string, data interface{}, auth bool)(map[string]interface{}, error) {
+func (c *Client) Request(method string, path string, data interface{}, auth bool) (map[string]interface{}, error) {
 	c.Lock()
 	defer c.Unlock()
 	return c.request(method, path, data, auth)
@@ -165,8 +164,8 @@ func (c *Client) PagedUnits(page int) (map[string]interface{}, error) {
 	return c.Get(fmt.Sprintf("/units/?p=%d", page), false)
 }
 
-func (c *Client) Inbox() (map[string]interface{}, error) {
-	return c.Get("/unit/inbox", true)
+func (c *Client) Inbox(page int) (map[string]interface{}, error) {
+	return c.Get(fmt.Sprintf("/unit/inbox?p=%d", page), true)
 }
 
 func (c *Client) SendMessageTo(fingerprint string, msg Message) error {
