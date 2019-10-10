@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -11,11 +10,13 @@ const (
 )
 
 type Message struct {
-	gorm.Model
-
+	ID         uint       `gorm:"primary_key"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	DeletedAt  *time.Time `sql:"index" json:"deleted_at"`
 	SeenAt     *time.Time `json:"seen_at" sql:"index"`
-	SenderID   uint       `json:"-"`
+	SenderID   uint       `json:"sender_id"`
 	ReceiverID uint       `json:"-"`
 	Data       string     `gorm:"size:512000;not null" json:"data"`
-	Signature  string     `gorm:"size:10000;not null" json:"-"`
+	Signature  string     `gorm:"size:10000;not null" json:"signature"`
 }

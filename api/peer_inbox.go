@@ -2,10 +2,17 @@ package api
 
 import (
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/pwngrid/models"
 	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
+)
+
+var (
+	ErrEmptyMessage = errors.New("empty message body")
 )
 
 // /api/v1/inbox
@@ -28,9 +35,19 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	messageSize := len(messageBody)
+	if messageSize == 0 {
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmptyMessage)
+		return
+	} else if messageSize > models.MessageDataMaxSize {
+		err := fmt.Errorf("max message signature size is %d", models.MessageSignatureMaxSize)
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
 	fingerprint := chi.URLParam(r, "fingerprint")
 
-	log.Info("signing new message for %s ...", fingerprint)
+	log.Info("signing new message of %d bytes for %s ...", len(messageBody), fingerprint)
 
 	signature, err := api.Keys.SignMessage(messageBody)
 	if err != nil {
