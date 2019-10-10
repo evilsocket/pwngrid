@@ -68,7 +68,7 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	srcKeys,err := crypto.FromPublicPEM(unit["public_key"].(string))
+	srcKeys, err := crypto.FromPublicPEM(unit["public_key"].(string))
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
@@ -88,7 +88,7 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("verifying message from %s ...", fingerprint)
 
-	if err := srcKeys.VerifyMessage(data, signature); err !=  nil{
+	if err := srcKeys.VerifyMessage(data, signature); err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
@@ -104,6 +104,25 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 	message["data"] = clearText
 
 	JSON(w, http.StatusOK, message)
+}
+
+// /api/v1/inbox/<msg_id>/<mark>
+func (api *API) PeerMarkInboxMessage(w http.ResponseWriter, r *http.Request) {
+	markAs := chi.URLParam(r, "mark")
+	msgIDParam := chi.URLParam(r, "msg_id")
+	msgID, err := strconv.Atoi(msgIDParam)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	obj, err := api.Client.MarkInboxMessage(msgID, markAs)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	JSON(w, http.StatusOK, obj)
 }
 
 // POST /api/v1/unit/<fingerprint>/inbox

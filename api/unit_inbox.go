@@ -73,25 +73,25 @@ func (api *API) MarkInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if markAs == "seen" {
 		message.SeenAt = &now
-		if err := models.Update(&message).Error; err != nil {
+		if err := models.Update(message).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "unseen" {
 		message.SeenAt = nil
-		if err := models.Update(&message).Error; err != nil {
+		if err := models.Update(message).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "deleted" {
 		message.DeletedAt = &now
-		if err := models.Update(&message).Error; err != nil {
+		if err := models.Update(message).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 	} else if markAs == "restored" {
 		message.DeletedAt = nil
-		if err := models.Update(&message).Error; err != nil {
+		if err := models.Update(message).Error; err != nil {
 			ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}

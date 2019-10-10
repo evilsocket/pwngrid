@@ -73,8 +73,13 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 				r.Route("/inbox", func(r chi.Router) {
 					// /api/v1/inbox/
 					r.Get("/", api.PeerGetInbox)
-					// /api/v1/inbox/<msg_id>
-					r.Get("/{msg_id:[0-9]+}", api.PeerGetInboxMessage)
+
+					r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
+						// /api/v1/inbox/<msg_id>
+						r.Get("/", api.PeerGetInboxMessage)
+						// /api/v1/inbox/<msg_id>/<mark>
+						r.Get("/{mark:[a-z]+}", api.PeerMarkInboxMessage)
+					})
 				})
 
 				r.Route("/unit", func(r chi.Router) {
