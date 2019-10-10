@@ -173,9 +173,11 @@ func (c *Client) Inbox(page int) (map[string]interface{}, error) {
 }
 
 func (c *Client) InboxMessage(id int) (map[string]interface{}, error) {
-	obj, err := c.Get(fmt.Sprintf("/unit/inbox/%d", id), true)
-	log.Info("%v", obj)
-	return obj, err
+	return c.Get(fmt.Sprintf("/unit/inbox/%d", id), true)
+}
+
+func (c *Client) MarkInboxMessage(id int, mark string) (map[string]interface{}, error) {
+	return c.Get(fmt.Sprintf("/unit/inbox/%d/%s", id, mark), true)
 }
 
 func (c *Client) SendMessageTo(fingerprint string, msg Message) error {

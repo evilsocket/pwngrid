@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	ErrEmptyMessage = errors.New("empty message body")
+	ErrEmptyMessage   = errors.New("empty message body")
+	ErrSenderNotFound = errors.New("sender not found")
 )
 
 // /api/v1/inbox/
@@ -43,13 +44,66 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obj, err := api.Client.InboxMessage(msgID)
+	message, err := api.Client.InboxMessage(msgID)
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	JSON(w, http.StatusOK, obj)
+	sender, found := message["sender"]
+	if !found {
+		ERROR(w, http.StatusNotFound, ErrSenderNotFound)
+		return
+	}
+
+	fingerprint, ok := sender.(string)
+	if !ok {
+		ERROR(w, http.StatusUnprocessableEntity, ErrSenderNotFound)
+		return
+	}
+
+	unit, err := api.Client.Unit(fingerprint)
+	if err != nil {
+		ERROR(w, http.StatusNotFound, err)
+		return
+	}
+
+	srcKeys,err := crypto.FromPublicPEM(unit["public_key"].(string))
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	data, err := base64.StdEncoding.DecodeString(message["data"].(string))
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	signature, err := base64.StdEncoding.DecodeString(message["signature"].(string))
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	log.Info("verifying message from %s ...", fingerprint)
+
+	if err := srcKeys.VerifyMessage(data, signature); err !=  nil{
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	log.Info("decrypting message from %s ...", fingerprint)
+
+	clearText, err := api.Keys.Decrypt(data)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	message["data"] = clearText
+
+	JSON(w, http.StatusOK, message)
 }
 
 // POST /api/v1/unit/<fingerprint>/inbox
@@ -81,7 +135,7 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 	log.Info("encrypting message of %d bytes for %s ...", cleartextSize, fingerprint)
 
 	messageBody, err := api.Keys.EncryptFor(cleartextMessage, unitKeys.Public)
-	if err != nil{
+	if err != nil {
 		log.Error("error encrypting message for %s: %v", fingerprint, err)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return

@@ -48,8 +48,13 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 					r.Route("/inbox", func(r chi.Router) {
 						// /api/v1/unit/inbox/
 						r.Get("/", api.GetInbox)
-						// /api/v1/unit/inbox/<msg_id>
-						r.Get("/{msg_id:[0-9]+}", api.GetInboxMessage)
+
+						r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
+							// /api/v1/unit/inbox/<msg_id>
+							r.Get("/", api.GetInboxMessage)
+							// /api/v1/unit/inbox/<msg_id>/<mark>
+							r.Get("/{mark:[a-z]+}", api.MarkInboxMessage)
+						})
 					})
 
 					// POST /api/v1/unit/<fingerprint>/inbox

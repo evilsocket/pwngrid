@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +52,57 @@ func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		JSON(w, http.StatusOK, message)
 	}
+}
+
+func (api *API) MarkInboxMessage(w http.ResponseWriter, r *http.Request) {
+	unit := Authenticate(w, r)
+	if unit == nil {
+		return
+	}
+
+	now := time.Now()
+	markAs := chi.URLParam(r, "mark")
+	msgIDParam := chi.URLParam(r, "msg_id")
+	msgID, err := strconv.Atoi(msgIDParam)
+
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	} else if message := unit.GetInboxMessage(msgID); message == nil {
+		ERROR(w, http.StatusNotFound, ErrEmpty)
+		return
+	} else if markAs == "seen" {
+		message.SeenAt = &now
+		if err := models.Update(&message).Error; err != nil {
+			ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+	} else if markAs == "unseen" {
+		message.SeenAt = nil
+		if err := models.Update(&message).Error; err != nil {
+			ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+	} else if markAs == "deleted" {
+		message.DeletedAt = &now
+		if err := models.Update(&message).Error; err != nil {
+			ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+	} else if markAs == "restored" {
+		message.DeletedAt = nil
+		if err := models.Update(&message).Error; err != nil {
+			ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+	} else {
+		ERROR(w, http.StatusNotFound, ErrEmpty)
+		return
+	}
+
+	JSON(w, http.StatusOK, map[string]bool {
+		"success": true,
+	})
 }
 
 func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
