@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -12,9 +11,7 @@ func (api *API) PeerListUnits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := fmt.Sprintf("%s/units/?page=%d", Endpoint, page)
-
-	obj, err := GetJSON(url)
+	obj, err := api.Client.PagedUnits(page)
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return

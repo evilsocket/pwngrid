@@ -64,7 +64,17 @@ func (u *Unit) updateToken() error {
 }
 
 func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
-	data, err := json.Marshal(enroll.Data)
+	prevData := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(u.Data), &prevData); err != nil {
+		return err
+	}
+
+	// only replace sent values
+	for key, obj := range enroll.Data {
+		prevData[key] = obj
+	}
+
+	newData, err := json.Marshal(prevData)
 	if err != nil {
 		return err
 	}
@@ -76,7 +86,7 @@ func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 	u.Name = enroll.Name
 	u.Address = enroll.Address
 	u.Country = enroll.Country
-	u.Data = string(data)
+	u.Data = string(newData)
 
 	return db.Save(u).Error
 }

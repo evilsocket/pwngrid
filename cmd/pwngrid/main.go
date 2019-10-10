@@ -26,6 +26,7 @@ func init() {
 	flag.StringVar(&env, "env", env, "Load .env from.")
 
 	flag.StringVar(&keysPath, "keys", keysPath, "If set, will load RSA keys from this folder and start in peer mode.")
+	flag.IntVar(&api.ClientTimeout, "client-timeout", api.ClientTimeout, "Timeout in seconds for requests to the server when in peer mode.")
 }
 
 func main() {

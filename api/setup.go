@@ -15,12 +15,14 @@ import (
 type API struct {
 	Router *chi.Mux
 	Keys   *crypto.KeyPair
+	Client *Client
 }
 
 func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 	api = &API{
 		Router: chi.NewRouter(),
 		Keys:   keys,
+		Client: NewClient(keys),
 	}
 
 	api.Router.Use(CORS)
