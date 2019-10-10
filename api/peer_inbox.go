@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/pwngrid/crypto"
 	"github.com/evilsocket/pwngrid/models"
 	"github.com/go-chi/chi"
 	"io/ioutil"
@@ -53,9 +54,35 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/unit/<fingerprint>/inbox
 func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
-	messageBody, err := ioutil.ReadAll(r.Body)
+	cleartextMessage, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("error reading request body: %v", err)
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	// get the peer public signature
+	fingerprint := chi.URLParam(r, "fingerprint")
+	unit, err := api.Client.Unit(fingerprint)
+	if err != nil {
+		ERROR(w, http.StatusNotFound, err)
+		return
+	}
+
+	unitKeys, err := crypto.FromPublicPEM(unit["public_key"].(string))
+	if err != nil {
+		log.Error("error parsing public key of %s: %v", fingerprint, err)
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	cleartextSize := len(cleartextMessage)
+
+	log.Info("encrypting message of %d bytes for %s ...", cleartextSize, fingerprint)
+
+	messageBody, err := api.Keys.EncryptFor(cleartextMessage, unitKeys.Public)
+	if err != nil{
+		log.Error("error encrypting message for %s: %v", fingerprint, err)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
@@ -70,9 +97,7 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fingerprint := chi.URLParam(r, "fingerprint")
-
-	log.Info("signing new message of %d bytes for %s ...", len(messageBody), fingerprint)
+	log.Info("signing encrypted message of %d bytes for %s ...", messageSize, fingerprint)
 
 	signature, err := api.Keys.SignMessage(messageBody)
 	if err != nil {
