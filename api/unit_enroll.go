@@ -17,6 +17,8 @@ func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, m
 		return err, enroll
 	}
 
+	log.Debug("%s", body)
+
 	enroll.Address = clientIP(r)
 	enroll.Country = r.Header.Get("CF-IPCountry")
 
