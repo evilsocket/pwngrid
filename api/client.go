@@ -80,68 +80,40 @@ func (c *Client) enroll() error {
 			"brain": brain,
 		},
 	}
-	buf := new(bytes.Buffer)
-	if err = json.NewEncoder(buf).Encode(enrollment); err != nil{
-		return err
-	}
 
-	url := fmt.Sprintf("%s%s", Endpoint, "/unit/enroll")
-	started := time.Now()
-	defer func() {
-		if err == nil {
-			log.Debug("GET %s (%s) %v", url, time.Since(started), err)
-		} else {
-			log.Error("GET %s (%s) %v", url, time.Since(started), err)
-		}
-	}()
-
-	req, err := http.NewRequest("POST", url, buf)
+	obj, err := c.request("POST", "/unit/enroll", enrollment, false)
 	if err != nil {
 		return err
 	}
 
-	res, err := c.cli.Do(req)
-	if err != nil {
-		return err
-	}
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
+	c.tokenAt = time.Now()
+	c.token = obj["token"].(string)
+	log.Debug("new token: %s", c.token)
 
-	var obj map[string]interface{}
-	if err = json.Unmarshal(body, &obj); err != nil {
-		return err
-	}
-
-	if res.StatusCode != 200 {
-		err = fmt.Errorf("%d %s", res.StatusCode, obj["error"])
-	} else {
-		c.tokenAt = time.Now()
-		c.token = obj["token"].(string)
-		log.Debug("new token: %s", c.token)
-	}
-
-	return err
+	return nil
 }
 
-func (c *Client) Get(path string, auth bool) (map[string]interface{}, error) {
-	c.Lock()
-	defer c.Unlock()
-
+func (c *Client) request(method string, path string, data interface{}, auth bool)(map[string]interface{}, error) {
 	url := fmt.Sprintf("%s%s", Endpoint, path)
 	err := (error)(nil)
 	started := time.Now()
 	defer func() {
 		if err == nil {
-			log.Debug("GET %s (%s) %v", url, time.Since(started), err)
+			log.Debug("%s %s (%s)", method, url, time.Since(started))
 		} else {
-			log.Error("GET %s (%s) %v", url, time.Since(started), err)
+			log.Error("%s %s (%s) %v", method, url, time.Since(started), err)
 		}
 	}()
 
-	req, err := http.NewRequest("GET", url, nil)
+	buf := new(bytes.Buffer)
+	if data != nil {
+		if err = json.NewEncoder(buf).Encode(data); err != nil {
+			return nil, err
+		}
+	}
+
+	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +147,19 @@ func (c *Client) Get(path string, auth bool) (map[string]interface{}, error) {
 
 	return obj, err
 }
+func (c *Client) Request(method string, path string, data interface{}, auth bool)(map[string]interface{}, error) {
+	c.Lock()
+	defer c.Unlock()
+	return c.request(method, path, data, auth)
+}
+
+func (c *Client) Get(path string, auth bool) (map[string]interface{}, error) {
+	return c.Request("GET", path, nil, auth)
+}
+
+func (c *Client) Post(path string, what interface{}, auth bool) (map[string]interface{}, error) {
+	return c.Request("POST", path, what, auth)
+}
 
 func (c *Client) PagedUnits(page int) (map[string]interface{}, error) {
 	return c.Get(fmt.Sprintf("/units/?p=%d", page), false)
@@ -182,4 +167,9 @@ func (c *Client) PagedUnits(page int) (map[string]interface{}, error) {
 
 func (c *Client) Inbox() (map[string]interface{}, error) {
 	return c.Get("/unit/inbox", true)
+}
+
+func (c *Client) SendMessageTo(fingerprint string, msg Message) error {
+	_, err := c.Post(fmt.Sprintf("/unit/%s/inbox", fingerprint), msg, true)
+	return err
 }

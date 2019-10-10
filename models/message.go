@@ -13,9 +13,9 @@ const (
 type Message struct {
 	gorm.Model
 
-	SeenAt     time.Time `json:"seen_at"`
-	SenderID   uint      `json:"-"`
-	ReceiverID uint      `json:"-"`
-	Data       string    `gorm:"size:512000;not null" json:"data"`
-	Signature  string    `gorm:"size:10000;not null" json:"-"`
+	SeenAt     *time.Time `json:"seen_at" sql:"index"`
+	SenderID   uint       `json:"-"`
+	ReceiverID uint       `json:"-"`
+	Data       string     `gorm:"size:512000;not null" json:"data"`
+	Signature  string     `gorm:"size:10000;not null" json:"-"`
 }
