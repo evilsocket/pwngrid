@@ -45,8 +45,12 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 					// /api/v1/unit/<fingerprint>
 					r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
 
-					// /api/v1/unit/inbox
-					r.Get("/inbox", api.GetInbox)
+					r.Route("/inbox", func(r chi.Router) {
+						// /api/v1/unit/inbox/
+						r.Get("/", api.GetInbox)
+						// /api/v1/unit/inbox/<msg_id>
+						r.Get("/{msg_id:[0-9]+}", api.GetInboxMessage)
+					})
 
 					// POST /api/v1/unit/<fingerprint>/inbox
 					r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.SendMessageTo)
@@ -61,8 +65,12 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 			} else {
 				log.Debug("registering peer api ...")
 
-				// /api/v1/inbox
-				r.Get("/inbox", api.PeerGetInbox)
+				r.Route("/inbox", func(r chi.Router) {
+					// /api/v1/inbox/
+					r.Get("/", api.PeerGetInbox)
+					// /api/v1/inbox/<msg_id>
+					r.Get("/{msg_id:[0-9]+}", api.PeerGetInboxMessage)
+				})
 
 				r.Route("/unit", func(r chi.Router) {
 					// POST /api/v1/unit/<fingerprint>/inbox

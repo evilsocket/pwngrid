@@ -12,3 +12,11 @@ func (u *Unit) GetPagedInbox(page int) (messages []Message, total int, pages int
 	}, &messages)
 	return messages, paginator.TotalRecord, paginator.TotalPage
 }
+
+func (u *Unit) GetInboxMessage(id int) *Message {
+	var msg Message
+	if err := db.Where("receiver_id = ? AND id = ?", u.ID, id).First(&msg).Error; err != nil{
+		return nil
+	}
+	return &msg
+}

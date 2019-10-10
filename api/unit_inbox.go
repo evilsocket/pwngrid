@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +31,26 @@ func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
 		"pages":    pages,
 		"messages": messages,
 	})
+}
+
+func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
+	unit := Authenticate(w, r)
+	if unit == nil {
+		return
+	}
+
+	msgIDParam := chi.URLParam(r, "msg_id")
+	msgID, err := strconv.Atoi(msgIDParam)
+
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	} else if message := unit.GetInboxMessage(msgID); message == nil {
+		ERROR(w, http.StatusNotFound, ErrEmpty)
+		return
+	} else {
+		JSON(w, http.StatusOK, message)
+	}
 }
 
 func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {

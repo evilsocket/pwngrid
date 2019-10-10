@@ -9,13 +9,14 @@ import (
 	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 var (
 	ErrEmptyMessage = errors.New("empty message body")
 )
 
-// /api/v1/inbox
+// /api/v1/inbox/
 func (api *API) PeerGetInbox(w http.ResponseWriter, r *http.Request) {
 	page, err := pageNum(r)
 	if err != nil {
@@ -24,6 +25,24 @@ func (api *API) PeerGetInbox(w http.ResponseWriter, r *http.Request) {
 	}
 
 	obj, err := api.Client.Inbox(page)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	JSON(w, http.StatusOK, obj)
+}
+
+// /api/v1/inbox/<msg_id>
+func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
+	msgIDParam := chi.URLParam(r, "msg_id")
+	msgID, err := strconv.Atoi(msgIDParam)
+	if err != nil {
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	obj, err := api.Client.InboxMessage(msgID)
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return

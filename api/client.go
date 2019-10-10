@@ -165,7 +165,13 @@ func (c *Client) PagedUnits(page int) (map[string]interface{}, error) {
 }
 
 func (c *Client) Inbox(page int) (map[string]interface{}, error) {
-	return c.Get(fmt.Sprintf("/unit/inbox?p=%d", page), true)
+	return c.Get(fmt.Sprintf("/unit/inbox/?p=%d", page), true)
+}
+
+func (c *Client) InboxMessage(id int) (map[string]interface{}, error) {
+	obj, err := c.Get(fmt.Sprintf("/unit/inbox/%d", id), true)
+	log.Info("%v", obj)
+	return obj, err
 }
 
 func (c *Client) SendMessageTo(fingerprint string, msg Message) error {
