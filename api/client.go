@@ -49,7 +49,7 @@ func (c *Client) enroll() error {
 	}
 
 	if strings.HasSuffix(name, ".local") {
-		name = strings.ReplaceAll(name, ".local", "")
+		name = strings.Replace(name, ".local", "", -1)
 	}
 
 	identity := fmt.Sprintf("%s@%s", name, c.keys.FingerprintHex)
