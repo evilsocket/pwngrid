@@ -3,12 +3,10 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"github.com/evilsocket/islazy/log"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/evilsocket/islazy/log"
 )
 
 var (
@@ -51,11 +49,19 @@ func pageNum(r *http.Request) (int, error) {
 }
 
 func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.WriteHeader(statusCode)
+	js, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Error("error encoding response: %v", err)
-		_, _ = fmt.Fprintf(w, "%s", err.Error())
+	w.WriteHeader(statusCode)
+
+	if sent, err := w.Write(js); err != nil {
+		log.Error("error sending response: %v", err)
+	} else {
+		log.Debug("sent %d bytes of json response", sent)
 	}
 }
 
