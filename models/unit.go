@@ -65,8 +65,12 @@ func (u *Unit) updateToken() error {
 
 func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 	prevData := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(u.Data), &prevData); err != nil {
-		return err
+
+	if u.Data != "" {
+		if err := json.Unmarshal([]byte(u.Data), &prevData); err != nil {
+			log.Warning("error parsing previous data: %v", err)
+			log.Debug("%s", u.Data)
+		}
 	}
 
 	// only replace sent values
