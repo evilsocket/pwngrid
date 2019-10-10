@@ -27,6 +27,7 @@ func EnrollUnit(enroll EnrollmentRequest) (err error, unit *Unit) {
 	}
 
 	if err = unit.UpdateWith(enroll); err != nil {
+		log.Debug("%+v", enroll)
 		return fmt.Errorf("error setting token for %s: %v", unit.Identity(), err), nil
 	}
 	return nil, unit

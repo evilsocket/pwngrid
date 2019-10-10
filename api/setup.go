@@ -25,6 +25,7 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 		Client: NewClient(keys),
 	}
 
+	// TODO: set right CORS for the peer mode
 	api.Router.Use(CORS)
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Options("/", corsRoute)
@@ -41,14 +42,14 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 				})
 
 				r.Route("/unit", func(r chi.Router) {
-					// /api/v1/unit/deadbeefdeadbeef
+					// /api/v1/unit/<fingerprint>
 					r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
 
 					// /api/v1/unit/inbox
 					r.Get("/inbox", api.GetInbox)
 
-					// PUT /api/v1/unit/deadbeefdeadbeef/inbox
-					r.Put("/{fingerprint:[a-fA-F0-9]+}/inbox", api.SendMessageTo)
+					// POST /api/v1/unit/<fingerprint>/inbox
+					r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.SendMessageTo)
 
 					// POST /api/v1/unit/enroll
 					r.Post("/enroll", api.UnitEnroll)
@@ -60,11 +61,17 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 			} else {
 				log.Debug("registering peer api ...")
 
+				// /api/v1/inbox
 				r.Get("/inbox", api.PeerGetInbox)
 
+				r.Route("/unit", func(r chi.Router) {
+					// POST /api/v1/unit/<fingerprint>/inbox
+					r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.PeerSendMessageTo)
+				})
+
 				r.Route("/units", func(r chi.Router) {
+					// /api/v1/units/
 					r.Get("/", api.PeerListUnits)
-					// r.Put("/{fingerprint:[a-fA-F0-9]+}/inbox", api.PeerSendMessageTo)
 				})
 			}
 		})
