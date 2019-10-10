@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/evilsocket/islazy/log"
 	"os"
@@ -15,86 +14,22 @@ const (
 )
 
 type Unit struct {
-	ID           uint          `gorm:"primary_key" json:"-"`
-	CreatedAt    time.Time     `json:"enrolled_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
-	DeletedAt    *time.Time    `sql:"index" json:"-"`
-	Address      string        `gorm:"size:50;not null" json:"-"`
-	Country      string        `gorm:"size:10" json:"country"`
-	Name         string        `gorm:"size:255;not null" json:"name"`
-	Fingerprint  string        `gorm:"size:255;not null;unique" json:"fingerprint"`
-	PublicKey    string        `gorm:"size:10000;not null" json:"public_key"`
-	Token        string        `gorm:"size:10000;not null" json:"-"`
-	Data         string        `gorm:"size:10000;not null" json:"data"`
+	ID          uint       `gorm:"primary_key" json:"-"`
+	CreatedAt   time.Time  `json:"enrolled_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	DeletedAt   *time.Time `sql:"index" json:"-"`
+	Address     string     `gorm:"size:50;not null" json:"-"`
+	Country     string     `gorm:"size:10" json:"country"`
+	Name        string     `gorm:"size:255;not null" json:"name"`
+	Fingerprint string     `gorm:"size:255;not null;unique" json:"fingerprint"`
+	PublicKey   string     `gorm:"size:10000;not null" json:"public_key"`
+	Token       string     `gorm:"size:10000;not null" json:"-"`
+	Data        string     `gorm:"size:10000;not null" json:"data"`
+
 	AccessPoints []AccessPoint `gorm:"foreignkey:UnitID" json:"-"`
-}
 
-type UnitsByCountry struct {
-	Country string `json:"country"`
-	Count   int    `json:"units"`
-}
-
-func GetUnitsByCountry() ([]UnitsByCountry, error) {
-	results := make([]UnitsByCountry, 0)
-	if err := db.Raw("SELECT country,COUNT(id) AS count FROM units GROUP BY country ORDER BY count DESC").Scan(&results).Error; err != nil {
-		return nil, err
-	}
-	return results, nil
-}
-
-func GetPagedUnits(page int) (units []Unit, total int, pages int) {
-	paginator := pagination.Paging(&pagination.Param{
-		DB:      db,
-		Page:    page,
-		Limit:   512,
-		OrderBy: []string{"id desc"},
-	}, &units)
-	return units, paginator.TotalRecord, paginator.TotalPage
-}
-
-func FindUnit(id uint) *Unit {
-	var unit Unit
-	if err := db.Find(&unit, id).Error; err != nil {
-		return nil
-	}
-	return &unit
-}
-
-func FindUnitByFingerprint(fingerprint string) *Unit {
-	var unit Unit
-	if fingerprint == "" {
-		return nil
-	} else if err := db.Where("fingerprint = ?", fingerprint).Take(&unit).Error; err != nil {
-		return nil
-	}
-	return &unit
-}
-
-func EnrollUnit(enroll EnrollmentRequest) (err error, unit *Unit) {
-	if unit = FindUnitByFingerprint(enroll.Fingerprint); unit == nil {
-		log.Info("enrolling new unit for %s (%s): %s", enroll.Address, enroll.Country, enroll.Identity)
-
-		unit = &Unit{
-			Address:     enroll.Address,
-			Country:     enroll.Country,
-			Name:        enroll.Name,
-			Fingerprint: enroll.Fingerprint,
-			PublicKey:   string(enroll.KeyPair.PublicPEM),
-		}
-
-		if err := db.Create(unit).Error; err != nil {
-			return fmt.Errorf("error enrolling %s: %v", unit.Identity(), err), nil
-		}
-	}
-
-	if err := unit.updateToken(); err != nil {
-		return fmt.Errorf("error creating token for %s: %v", unit.Identity(), err), nil
-	}
-
-	if err = unit.UpdateWith(enroll); err != nil {
-		return fmt.Errorf("error setting token for %s: %v", unit.Identity(), err), nil
-	}
-	return nil, unit
+	Inbox []Message `gorm:"foreignkey:ReceiverID" json:"-"`
+	Sent  []Message `gorm:"foreignkey:SenderID" json:"-"`
 }
 
 func (u Unit) Identity() string {

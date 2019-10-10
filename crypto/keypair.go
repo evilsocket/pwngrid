@@ -62,7 +62,16 @@ func FromPublicPEM(pubPEM string) (pair *KeyPair, err error) {
 	return pair, pair.setupPublic()
 }
 
-func KeyPairForPath(keysPath string, bits int) (pair *KeyPair, err error) {
+func Load(keysPath string) (pair *KeyPair, err error) {
+	pair = &KeyPair{
+		Path:        keysPath,
+		PrivatePath: path.Join(keysPath, "id_rsa"),
+		PublicPath:  path.Join(keysPath, "id_rsa.pub"),
+	}
+	return pair, pair.Load()
+}
+
+func LoadOrCreate(keysPath string, bits int) (pair *KeyPair, err error) {
 	pair = &KeyPair{
 		Path:        keysPath,
 		Bits:        bits,

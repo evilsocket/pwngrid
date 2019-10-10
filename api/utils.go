@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi"
 	"net/http"
@@ -9,6 +10,10 @@ import (
 	"strings"
 
 	"github.com/evilsocket/islazy/log"
+)
+
+var (
+	ErrEmpty = errors.New("")
 )
 
 func clientIP(r *http.Request) string {
@@ -45,6 +50,16 @@ func pageNum(r *http.Request) (int, error) {
 	return strconv.Atoi(pageParam)
 }
 
+
+func JSONRaw(w http.ResponseWriter, statusCode int, raw []byte) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(raw); err != nil {
+		log.Error("error encoding response: %v", err)
+		_, _ = fmt.Fprintf(w, "%s", err.Error())
+	}
+}
+
 func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
@@ -65,3 +80,4 @@ func ERROR(w http.ResponseWriter, statusCode int, err error) {
 	}
 	JSON(w, http.StatusBadRequest, nil)
 }
+
