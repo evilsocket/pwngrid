@@ -41,8 +41,6 @@ func (api *API) InboxMessage(id int)(map[string]interface{}, int, error) {
 		return nil, http.StatusUnprocessableEntity, err
 	}
 
-	log.Info("%+v", message)
-
 	sender, found := message["sender"]
 	if !found {
 		return nil, http.StatusNotFound, ErrSenderNotFound

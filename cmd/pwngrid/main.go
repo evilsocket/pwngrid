@@ -102,7 +102,7 @@ func showInbox(box map[string]interface{}) {
 }
 
 func showMessage(msg map[string]interface{}) {
-	fmt.Println(msg)
+	fmt.Println()
 	fmt.Printf("Message from %s@%s of the %s\n\n", msg["sender_name"], msg["sender"], msg["created_at"])
 	fmt.Printf("%s\n", msg["data"])
 	fmt.Println()
