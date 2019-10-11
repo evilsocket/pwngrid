@@ -1,6 +1,6 @@
 VERSION=$(shell git describe --abbrev=0 --tags)
 
-all:
+all: clean
 	@mkdir build
 	@go build -o build/pwngrid cmd/pwngrid/*.go
 	@ls -la build/pwngrid
