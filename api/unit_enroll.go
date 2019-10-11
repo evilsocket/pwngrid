@@ -32,7 +32,7 @@ func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, m
 	if err = enroll.Validate(); err != nil {
 		log.Warning("error while validating enrollment request from %s: %v", enroll.Address, err)
 		log.Debug("%s", body)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 		return err, enroll
 	}
 
