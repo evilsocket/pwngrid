@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/evilsocket/islazy/log"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -83,9 +84,9 @@ func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 			} else if epochs, found := session["epochs"]; !found {
 				set = false
 				log.Warning("corrupted session (no epochs): %v", obj)
-			} else if num, ok := epochs.(int); !ok {
+			} else if num, ok := epochs.(uint); !ok {
 				set = false
-				log.Warning("corrupted session (epochs type): %v", obj)
+				log.Warning("corrupted session (epochs type %v): %v", reflect.TypeOf(epochs), obj)
 			} else if num == 0 {
 				// do not update with empty sessions
 				set = false
