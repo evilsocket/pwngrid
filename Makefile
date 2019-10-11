@@ -27,10 +27,10 @@ release_files: clean
 	@GOARM=6 GOARCH=amd64 GOOS=linux go build -o build/pwngrid cmd/pwngrid/main.go
 	@zip -j "build/pwngrid_linux_amd64_$(VERSION).zip" build/pwngrid > /dev/null
 	@rm -rf build/pwngrid
-	@openssl dgst -sha256 "build/pwngrid_linux_amd64_$(VERSION).zip"
 	@echo building for linux/armv6l ...
 	@GOARM=6 GOARCH=arm GOOS=linux go build -o build/pwngrid cmd/pwngrid/main.go
 	@zip -j "build/pwngrid_linux_armv6l_$(VERSION).zip" build/pwngrid > /dev/null
 	@rm -rf build/pwngrid
-	@openssl dgst -sha256 "build/pwngrid_linux_armv6l_$(VERSION).zip"
+	@openssl dgst -sha256 "build/pwngrid_linux_amd64_$(VERSION).zip" > "build/pwngrid-hashes.sha256"
+	@openssl dgst -sha256 "build/pwngrid_linux_armv6l_$(VERSION).zip" >> "build/pwngrid-hashes.sha256"
 	@ls -la build
