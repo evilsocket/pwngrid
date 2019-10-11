@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/api"
 	"github.com/evilsocket/pwngrid/crypto"
@@ -12,6 +13,7 @@ import (
 var (
 	debug    = false
 	routes   = false
+	ver      = false
 	address  = "0.0.0.0:8666"
 	env      = ".env"
 	keysPath = ""
@@ -19,6 +21,7 @@ var (
 )
 
 func init() {
+	flag.BoolVar(&ver, "version", ver, "Print version and exit.")
 	flag.BoolVar(&debug, "debug", debug, "Enable debug logs.")
 	flag.BoolVar(&routes, "routes", routes, "Generate routes documentation.")
 	flag.StringVar(&log.Output, "log", log.Output, "Log file path or empty for standard output.")
@@ -34,6 +37,11 @@ func main() {
 	var err error
 
 	flag.Parse()
+
+	if ver {
+		fmt.Println(api.Version)
+		return
+	}
 
 	if debug {
 		log.Level = log.DEBUG
