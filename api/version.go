@@ -1,5 +1,5 @@
 package api
 
 const (
-	Version  = "1.5.6"
+	Version  = "1.5.7"
 )
