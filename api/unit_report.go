@@ -35,7 +35,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if parsed, err := net.ParseMAC(ap.BSSID); err != nil {
-		log.Warning("error while parsing wifi ap bssid %s from %s: %v", client, ap.BSSID, err)
+		log.Warning("error while parsing wifi ap bssid %s from %s: %v", ap.BSSID, client, err)
 		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 		return
 	} else {
