@@ -84,7 +84,7 @@ func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 			} else if epochs, found := session["epochs"]; !found {
 				set = false
 				log.Warning("corrupted session (no epochs): %v", obj)
-			} else if num, ok := epochs.(uint); !ok {
+			} else if num, ok := epochs.(float64); !ok {
 				set = false
 				log.Warning("corrupted session (epochs type %v): %v", reflect.TypeOf(epochs), obj)
 			} else if num == 0 {
