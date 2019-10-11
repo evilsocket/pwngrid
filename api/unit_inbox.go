@@ -42,6 +42,7 @@ type fullMessage struct {
 	DeletedAt  *time.Time `json:"deleted_at"`
 	SeenAt     *time.Time `json:"seen_at"`
 	Sender     string     `json:"sender"`
+	SenderName string     `json:"sender_name"`
 	Data       string     `json:"data"`
 	Signature  string     `json:"signature"`
 }
@@ -63,14 +64,15 @@ func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		JSON(w, http.StatusOK, fullMessage{
-			ID:        message.ID,
-			CreatedAt: message.CreatedAt,
-			UpdatedAt: message.UpdatedAt,
-			DeletedAt: message.DeletedAt,
-			SeenAt:    message.SeenAt,
-			Sender:    message.Sender,
-			Data:      message.Data,
-			Signature: message.Signature,
+			ID:         message.ID,
+			CreatedAt:  message.CreatedAt,
+			UpdatedAt:  message.UpdatedAt,
+			DeletedAt:  message.DeletedAt,
+			SeenAt:     message.SeenAt,
+			Sender:     message.Sender,
+			SenderName: message.SenderName,
+			Data:       message.Data,
+			Signature:  message.Signature,
 		})
 	}
 }
@@ -117,7 +119,7 @@ func (api *API) MarkInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, map[string]bool {
+	JSON(w, http.StatusOK, map[string]bool{
 		"success": true,
 	})
 }

@@ -35,6 +35,62 @@ func (api *API) PeerGetInbox(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, obj)
 }
 
+func (api *API) InboxMessage(id int)(map[string]interface{}, int, error) {
+	message, err := api.Client.InboxMessage(id)
+	if err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	log.Info("%+v", message)
+
+	sender, found := message["sender"]
+	if !found {
+		return nil, http.StatusNotFound, ErrSenderNotFound
+	}
+
+	fingerprint, ok := sender.(string)
+	if !ok {
+		return nil, http.StatusUnprocessableEntity, ErrSenderNotFound
+	}
+
+	unit, err := api.Client.Unit(fingerprint)
+	if err != nil {
+		return nil, http.StatusNotFound, err
+	}
+
+	srcKeys, err := crypto.FromPublicPEM(unit["public_key"].(string))
+	if err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(message["data"].(string))
+	if err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	signature, err := base64.StdEncoding.DecodeString(message["signature"].(string))
+	if err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	log.Info("verifying message from %s ...", fingerprint)
+
+	if err := srcKeys.VerifyMessage(data, signature); err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	log.Info("decrypting message from %s ...", fingerprint)
+
+	clearText, err := api.Keys.Decrypt(data)
+	if err != nil {
+		return nil, http.StatusUnprocessableEntity, err
+	}
+
+	message["data"] = clearText
+
+	return message, 0, nil
+}
+
 // /api/v1/inbox/<msg_id>
 func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 	msgIDParam := chi.URLParam(r, "msg_id")
@@ -44,64 +100,11 @@ func (api *API) PeerGetInboxMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, err := api.Client.InboxMessage(msgID)
+	message, status, err := api.InboxMessage(msgID)
 	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, status, err)
 		return
 	}
-
-	sender, found := message["sender"]
-	if !found {
-		ERROR(w, http.StatusNotFound, ErrSenderNotFound)
-		return
-	}
-
-	fingerprint, ok := sender.(string)
-	if !ok {
-		ERROR(w, http.StatusUnprocessableEntity, ErrSenderNotFound)
-		return
-	}
-
-	unit, err := api.Client.Unit(fingerprint)
-	if err != nil {
-		ERROR(w, http.StatusNotFound, err)
-		return
-	}
-
-	srcKeys, err := crypto.FromPublicPEM(unit["public_key"].(string))
-	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	data, err := base64.StdEncoding.DecodeString(message["data"].(string))
-	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	signature, err := base64.StdEncoding.DecodeString(message["signature"].(string))
-	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	log.Info("verifying message from %s ...", fingerprint)
-
-	if err := srcKeys.VerifyMessage(data, signature); err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	log.Info("decrypting message from %s ...", fingerprint)
-
-	clearText, err := api.Keys.Decrypt(data)
-	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	message["data"] = clearText
 
 	JSON(w, http.StatusOK, message)
 }
@@ -125,45 +128,30 @@ func (api *API) PeerMarkInboxMessage(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, obj)
 }
 
-// POST /api/v1/unit/<fingerprint>/inbox
-func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
-	cleartextMessage, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error("error reading request body: %v", err)
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	// get the peer public signature
-	fingerprint := chi.URLParam(r, "fingerprint")
+func (api *API) SendMessage(fingerprint string, cleartext []byte) (int, error) {
 	unit, err := api.Client.Unit(fingerprint)
 	if err != nil {
-		ERROR(w, http.StatusNotFound, err)
-		return
+		return http.StatusNotFound, err
 	}
 
 	unitKeys, err := crypto.FromPublicPEM(unit["public_key"].(string))
 	if err != nil {
 		log.Error("error parsing public key of %s: %v", fingerprint, err)
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
+		return http.StatusUnprocessableEntity, err
 	}
 
-	messageBody, err := api.Keys.EncryptFor(cleartextMessage, unitKeys.Public)
+	messageBody, err := api.Keys.EncryptFor(cleartext, unitKeys.Public)
 	if err != nil {
 		log.Error("error encrypting message for %s: %v", fingerprint, err)
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
+		return http.StatusUnprocessableEntity, err
 	}
 
 	messageSize := len(messageBody)
 	if messageSize == 0 {
-		ERROR(w, http.StatusUnprocessableEntity, ErrEmptyMessage)
-		return
+		return http.StatusUnprocessableEntity, ErrEmptyMessage
 	} else if messageSize > models.MessageDataMaxSize {
 		err := fmt.Errorf("max message signature size is %d", models.MessageSignatureMaxSize)
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
+		return http.StatusUnprocessableEntity, err
 	}
 
 	log.Info("signing encrypted message of %d bytes for %s ...", messageSize, fingerprint)
@@ -171,8 +159,7 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 	signature, err := api.Keys.SignMessage(messageBody)
 	if err != nil {
 		log.Error("%v", err)
-		ERROR(w, http.StatusUnprocessableEntity, err)
-		return
+		return http.StatusUnprocessableEntity, err
 	}
 
 	msg := Message{
@@ -182,7 +169,25 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.Client.SendMessageTo(fingerprint, msg); err != nil {
 		log.Error("%v", err)
+		return http.StatusUnprocessableEntity, err
+	}
+
+	return 0, nil
+}
+
+// POST /api/v1/unit/<fingerprint>/inbox
+func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
+	cleartextMessage, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error("error reading request body: %v", err)
 		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	fingerprint := chi.URLParam(r, "fingerprint")
+	status, err := api.SendMessage(fingerprint, cleartextMessage)
+	if err != nil {
+		ERROR(w, status, err)
 		return
 	}
 
