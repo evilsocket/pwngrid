@@ -17,6 +17,7 @@ type Message struct {
 	SeenAt     *time.Time `json:"seen_at" sql:"index"`
 	SenderID   uint       `json:"-"`
 	ReceiverID uint       `json:"-"`
+	SenderName string     `gorm:"size:255" json:"sender_name"`
 	Sender     string     `gorm:"size:255;not null" json:"sender"`
 	Data       string     `gorm:"size:512000;not null" json:"-"`
 	Signature  string     `gorm:"size:10000;not null" json:"-"`

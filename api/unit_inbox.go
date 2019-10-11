@@ -200,6 +200,7 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	msg := models.Message{
 		SenderID:   srcUnit.ID,
 		Sender:     srcUnit.Fingerprint,
+		SenderName: srcUnit.Name,
 		ReceiverID: dstUnit.ID,
 		Data:       message.Data,
 		Signature:  message.Signature,
