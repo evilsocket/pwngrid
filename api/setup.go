@@ -18,6 +18,74 @@ type API struct {
 	Client *Client
 }
 
+func (api *API) setupServerRoutes() {
+	log.Debug("registering server api ...")
+
+	api.Router.Route("/api", func(r chi.Router) {
+		r.Options("/", CORSOptionHandler)
+		r.Route("/v1", func(r chi.Router) {
+			r.Route("/units", func(r chi.Router) {
+				// /api/v1/units/
+				r.Get("/", api.ListUnits)
+				// /api/v1/units/by_country
+				r.Get("/by_country", api.UnitsByCountry)
+			})
+			r.Route("/unit", func(r chi.Router) {
+				// /api/v1/unit/<fingerprint>
+				r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
+				r.Route("/inbox", func(r chi.Router) {
+					// /api/v1/unit/inbox/
+					r.Get("/", api.GetInbox)
+					r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
+						// /api/v1/unit/inbox/<msg_id>
+						r.Get("/", api.GetInboxMessage)
+						// /api/v1/unit/inbox/<msg_id>/<mark>
+						r.Get("/{mark:[a-z]+}", api.MarkInboxMessage)
+					})
+				})
+				// POST /api/v1/unit/<fingerprint>/inbox
+				r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.SendMessageTo)
+				// POST /api/v1/unit/enroll
+				r.Post("/enroll", api.UnitEnroll)
+				r.Route("/report", func(r chi.Router) {
+					// POST /api/v1/unit/report/ap
+					r.Post("/ap", api.UnitReportAP)
+				})
+			})
+		})
+	})
+}
+
+func (api *API) setupPeerRoutes() {
+	log.Debug("registering peer api ...")
+
+	api.Router.Route("/api", func(r chi.Router) {
+		r.Options("/", CORSOptionHandler)
+		r.Route("/v1", func(r chi.Router) {
+			// POST /api/v1/data
+			r.Post("/data", api.PeerSetData)
+			r.Route("/inbox", func(r chi.Router) {
+				// /api/v1/inbox/
+				r.Get("/", api.PeerGetInbox)
+				r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
+					// /api/v1/inbox/<msg_id>
+					r.Get("/", api.PeerGetInboxMessage)
+					// /api/v1/inbox/<msg_id>/<mark>
+					r.Get("/{mark:[a-z]+}", api.PeerMarkInboxMessage)
+				})
+			})
+			r.Route("/unit", func(r chi.Router) {
+				// POST /api/v1/unit/<fingerprint>/inbox
+				r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.PeerSendMessageTo)
+			})
+			r.Route("/units", func(r chi.Router) {
+				// /api/v1/units/
+				r.Get("/", api.PeerListUnits)
+			})
+		})
+	})
+}
+
 func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 	api = &API{
 		Router: chi.NewRouter(),
@@ -25,75 +93,13 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 		Client: NewClient(keys),
 	}
 
-	// TODO: set right CORS for the peer mode
 	api.Router.Use(CORS)
-	api.Router.Route("/api", func(r chi.Router) {
-		r.Options("/", corsRoute)
 
-		r.Route("/v1", func(r chi.Router) {
-			if api.Keys == nil {
-				log.Debug("registering server api ...")
-
-				r.Route("/units", func(r chi.Router) {
-					// /api/v1/units/
-					r.Get("/", api.ListUnits)
-					// /api/v1/units/by_country
-					r.Get("/by_country", api.UnitsByCountry)
-				})
-
-				r.Route("/unit", func(r chi.Router) {
-					// /api/v1/unit/<fingerprint>
-					r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
-
-					r.Route("/inbox", func(r chi.Router) {
-						// /api/v1/unit/inbox/
-						r.Get("/", api.GetInbox)
-
-						r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
-							// /api/v1/unit/inbox/<msg_id>
-							r.Get("/", api.GetInboxMessage)
-							// /api/v1/unit/inbox/<msg_id>/<mark>
-							r.Get("/{mark:[a-z]+}", api.MarkInboxMessage)
-						})
-					})
-
-					// POST /api/v1/unit/<fingerprint>/inbox
-					r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.SendMessageTo)
-
-					// POST /api/v1/unit/enroll
-					r.Post("/enroll", api.UnitEnroll)
-					r.Route("/report", func(r chi.Router) {
-						// POST /api/v1/unit/report/ap
-						r.Post("/ap", api.UnitReportAP)
-					})
-				})
-			} else {
-				log.Debug("registering peer api ...")
-
-				r.Route("/inbox", func(r chi.Router) {
-					// /api/v1/inbox/
-					r.Get("/", api.PeerGetInbox)
-
-					r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
-						// /api/v1/inbox/<msg_id>
-						r.Get("/", api.PeerGetInboxMessage)
-						// /api/v1/inbox/<msg_id>/<mark>
-						r.Get("/{mark:[a-z]+}", api.PeerMarkInboxMessage)
-					})
-				})
-
-				r.Route("/unit", func(r chi.Router) {
-					// POST /api/v1/unit/<fingerprint>/inbox
-					r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.PeerSendMessageTo)
-				})
-
-				r.Route("/units", func(r chi.Router) {
-					// /api/v1/units/
-					r.Get("/", api.PeerListUnits)
-				})
-			}
-		})
-	})
+	if api.Keys == nil {
+		api.setupServerRoutes()
+	} else {
+		api.setupPeerRoutes()
+	}
 
 	if routes {
 		fmt.Println(docgen.MarkdownRoutesDoc(api.Router, docgen.MarkdownOpts{

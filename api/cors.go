@@ -24,6 +24,6 @@ func CORS(next http.Handler) http.Handler {
 	})
 }
 
-func corsRoute(w http.ResponseWriter, r *http.Request) {
+func CORSOptionHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	ClientTimeout = 60
+	ClientTimeout   = 60
+	ClientTokenFile = "/root/.api-enrollment.json"
 )
 
 const (
@@ -31,15 +32,39 @@ type Client struct {
 	keys    *crypto.KeyPair
 	token   string
 	tokenAt time.Time
+	data    map[string]interface{}
 }
 
 func NewClient(keys *crypto.KeyPair) *Client {
-	return &Client{
+	cli := &Client{
 		cli: &http.Client{
 			Timeout: time.Duration(ClientTimeout) * time.Second,
 		},
 		keys: keys,
+		data: make(map[string]interface{}),
 	}
+
+	if info, err := os.Stat(ClientTokenFile); err == nil {
+		if time.Since(info.ModTime()) < models.TokenTTL {
+			log.Debug("loading token from %s ...", ClientTokenFile)
+			var data map[string]interface{}
+			if raw, err := ioutil.ReadFile(ClientTokenFile); err == nil {
+				if err := json.Unmarshal(raw, &data); err == nil {
+					cli.token = data["token"].(string)
+					cli.tokenAt = info.ModTime()
+					log.Debug("token: %s", cli.token)
+				} else {
+					log.Warning("error decoding %s: %v", ClientTokenFile, err)
+				}
+			} else {
+				log.Warning("error reading %s: %v", ClientTokenFile, err)
+			}
+		} else {
+			log.Debug("token in %s is expired", ClientTokenFile)
+		}
+	}
+
+	return cli
 }
 
 func (c *Client) enroll() error {
@@ -65,20 +90,11 @@ func (c *Client) enroll() error {
 
 	log.Debug("SIGN(%s) = %s", identity, signature64)
 
-	brain := map[string]interface{}{}
-	if data, err := ioutil.ReadFile("/root/brain.json"); err == nil {
-		if err = json.Unmarshal(data, &brain); err == nil {
-			log.Debug("brain: %v", brain)
-		}
-	}
-
 	enrollment := map[string]interface{}{
 		"identity":   identity,
 		"public_key": pubKeyPEM64,
 		"signature":  signature64,
-		"data": map[string]interface{}{
-			"brain": brain,
-		},
+		"data":       c.data,
 	}
 
 	obj, err := c.request("POST", "/unit/enroll", enrollment, false)
@@ -89,6 +105,15 @@ func (c *Client) enroll() error {
 	c.tokenAt = time.Now()
 	c.token = obj["token"].(string)
 	log.Debug("new token: %s", c.token)
+
+	if raw, err := json.Marshal(obj); err == nil {
+		log.Debug("saving token to %s ...", ClientTokenFile)
+		if err = ioutil.WriteFile(ClientTokenFile, raw, 0644); err != nil {
+			log.Warning("error saving token to %s: %v", ClientTokenFile, err)
+		}
+	} else {
+		log.Warning("error encoding token: %v", err)
+	}
 
 	return nil
 }
@@ -146,6 +171,22 @@ func (c *Client) request(method string, path string, data interface{}, auth bool
 
 	return obj, err
 }
+
+func (c *Client) SetData(newData map[string]interface{}) map[string]interface{} {
+	c.Lock()
+	defer c.Unlock()
+
+	for key, val := range newData {
+		if val == nil {
+			delete(c.data, key)
+		} else {
+			c.data[key] = val
+		}
+	}
+
+	return c.data
+}
+
 func (c *Client) Request(method string, path string, data interface{}, auth bool) (map[string]interface{}, error) {
 	c.Lock()
 	defer c.Unlock()

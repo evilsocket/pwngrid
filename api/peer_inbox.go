@@ -149,10 +149,6 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleartextSize := len(cleartextMessage)
-
-	log.Info("encrypting message of %d bytes for %s ...", cleartextSize, fingerprint)
-
 	messageBody, err := api.Keys.EncryptFor(cleartextMessage, unitKeys.Public)
 	if err != nil {
 		log.Error("error encrypting message for %s: %v", fingerprint, err)
@@ -183,8 +179,6 @@ func (api *API) PeerSendMessageTo(w http.ResponseWriter, r *http.Request) {
 		Signature: base64.StdEncoding.EncodeToString(signature),
 		Data:      base64.StdEncoding.EncodeToString(messageBody),
 	}
-
-	log.Debug("%v", msg)
 
 	if err := api.Client.SendMessageTo(fingerprint, msg); err != nil {
 		log.Error("%v", err)
