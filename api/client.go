@@ -184,6 +184,12 @@ func (c *Client) SetData(newData map[string]interface{}) map[string]interface{} 
 		}
 	}
 
+	if time.Since(c.tokenAt) >= models.TokenTTL {
+		if err := c.enroll(); err != nil {
+			log.Error("error while refreshing token: %v", err)
+		}
+	}
+
 	return c.data
 }
 
