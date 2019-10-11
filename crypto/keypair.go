@@ -62,21 +62,27 @@ func FromPublicPEM(pubPEM string) (pair *KeyPair, err error) {
 	return pair, pair.setupPublic()
 }
 
+func PrivatePath(keysPath string) string {
+	return path.Join(keysPath, "id_rsa")
+}
+
 func Load(keysPath string) (pair *KeyPair, err error) {
+	privFile := PrivatePath(keysPath)
 	pair = &KeyPair{
 		Path:        keysPath,
-		PrivatePath: path.Join(keysPath, "id_rsa"),
-		PublicPath:  path.Join(keysPath, "id_rsa.pub"),
+		PrivatePath: privFile,
+		PublicPath:  privFile + ".pub",
 	}
 	return pair, pair.Load()
 }
 
 func LoadOrCreate(keysPath string, bits int) (pair *KeyPair, err error) {
+	privFile := PrivatePath(keysPath)
 	pair = &KeyPair{
 		Path:        keysPath,
 		Bits:        bits,
-		PrivatePath: path.Join(keysPath, "id_rsa"),
-		PublicPath:  path.Join(keysPath, "id_rsa.pub"),
+		PrivatePath: privFile,
+		PublicPath:  privFile + ".pub",
 	}
 
 	if !fs.Exists(pair.PrivatePath) {
@@ -108,10 +114,10 @@ func (pair *KeyPair) setupPublic() (err error) {
 		return fmt.Errorf("failed converting public key to PEM: %v", err)
 	}
 
-	pem := strings.TrimRight(string(pair.PublicPEM), "\n")
+	cleanPEM := strings.TrimRight(string(pair.PublicPEM), "\n")
 
 	hash := Hasher.New()
-	hash.Write([]byte(pem))
+	hash.Write([]byte(cleanPEM))
 
 	pair.Fingerprint = hash.Sum(nil)
 	pair.FingerprintHex = fmt.Sprintf("%02x", pair.Fingerprint)
