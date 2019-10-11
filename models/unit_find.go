@@ -19,7 +19,7 @@ func GetPagedUnits(page int) (units []Unit, total int, pages int) {
 	paginator := pagination.Paging(&pagination.Param{
 		DB:      db,
 		Page:    page,
-		Limit:   512,
+		Limit:   25,
 		OrderBy: []string{"id desc"},
 	}, &units)
 	return units, paginator.TotalRecord, paginator.TotalPage
