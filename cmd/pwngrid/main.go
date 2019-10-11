@@ -65,11 +65,11 @@ func main() {
 
 	log.Info("pwngrid v%s starting in %s mode ...", api.Version, mode)
 
-	if err := godotenv.Load(env); err != nil {
-		log.Fatal("%v", err)
-	}
-
 	if keys == nil {
+		if err := godotenv.Load(env); err != nil {
+			log.Fatal("%v", err)
+		}
+
 		if err := models.Setup(); err != nil {
 			log.Fatal("%v", err)
 		}
