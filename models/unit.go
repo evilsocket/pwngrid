@@ -75,7 +75,26 @@ func (u *Unit) UpdateWith(enroll EnrollmentRequest) error {
 
 	// only replace sent values
 	for key, obj := range enroll.Data {
-		prevData[key] = obj
+		set := true
+		if key == "session" {
+			if session, ok := obj.(map[string]interface{}); !ok {
+				set = false
+				log.Warning("corrupted session: %v", obj)
+			} else if epochs, found := session["epochs"]; !found {
+				set = false
+				log.Warning("corrupted session: %v", obj)
+			} else if num, ok := epochs.(int); !ok {
+				set = false
+				log.Warning("corrupted session: %v", obj)
+			} else if num == 0 {
+				// do not update with empty sessions
+				set = false
+			}
+		}
+
+		if set {
+			prevData[key] = obj
+		}
 	}
 
 	newData, err := json.Marshal(prevData)
