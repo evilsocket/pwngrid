@@ -24,12 +24,14 @@ func (api *API) readEnrollment(w http.ResponseWriter, r *http.Request) (error, m
 
 	if err = json.Unmarshal(body, &enroll); err != nil {
 		log.Warning("error while reading enrollment request from %s: %v", enroll.Address, err)
+		log.Debug("%s", body)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return err, enroll
 	}
 
 	if err = enroll.Validate(); err != nil {
 		log.Warning("error while validating enrollment request from %s: %v", enroll.Address, err)
+		log.Debug("%s", body)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return err, enroll
 	}

@@ -1,0 +1,15 @@
+[Unit]
+Description=pwngrid peer service
+Documentation=https://pwnagotchi.ai/
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+PermissionsStartOnly=true
+ExecStart=/usr/local/bin/pwngrid -log /var/log/pwngrid.log -peer
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
