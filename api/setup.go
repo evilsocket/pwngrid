@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/evilsocket/pwngrid/crypto"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/docgen"
 	"net/http"
 
@@ -100,6 +101,7 @@ func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
 	api.Router.Use(CORS)
 
 	if api.Keys == nil {
+		api.Router.Use(middleware.DefaultCompress)
 		api.setupServerRoutes()
 	} else {
 		api.setupPeerRoutes()
