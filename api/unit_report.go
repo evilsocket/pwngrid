@@ -30,7 +30,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	var ap apReport
 	if err = json.Unmarshal(body, &ap); err != nil {
 		log.Warning("error while reading wifi ap from %s: %v", client, err)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existing := unit.FindAccessPoint(ap.ESSID, ap.BSSID); existing == nil {
-		log.Info("unit %s (%s %s) reporting new wifi access point %v", unit.Identity(), unit.Address,
+		log.Debug("unit %s (%s %s) reporting new wifi access point %v", unit.Identity(), unit.Address,
 			unit.Country, ap)
 
 		newAP := models.AccessPoint{
