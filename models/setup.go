@@ -17,7 +17,7 @@ func Setup() (err error) {
 	name := os.Getenv("DB_NAME")
 
 	log.Info("connecting to %s:%s ...", hostname, port)
-	dbURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", username, password, hostname, port, name)
+	dbURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", username, password, hostname, port, name)
 	if db, err = gorm.Open("mysql", dbURL); err != nil {
 		return
 	}

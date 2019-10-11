@@ -23,7 +23,7 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 	client := clientIP(r)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 		return
 	}
 
@@ -55,12 +55,12 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 
 		if err := models.Create(&newAP).Error; err != nil {
 			log.Warning("error creating ap %v: %v", newAP, err)
-			ERROR(w, http.StatusInternalServerError, err)
+			ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 			return
 		}
 	} else if err := models.Update(existing).Error; err != nil {
 		log.Warning("error updating ap %v: %v", existing, err)
-		ERROR(w, http.StatusInternalServerError, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
 		return
 	}
 
