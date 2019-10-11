@@ -23,8 +23,10 @@ var (
 	inbox    = false
 	del      = false
 	unread   = false
+	clear   = false
 	receiver = ""
 	message  = ""
+	output   = ""
 	page     = 1
 	id       = 0
 	address  = "0.0.0.0:8666"
@@ -49,50 +51,64 @@ func init() {
 	flag.BoolVar(&inbox, "inbox", inbox, "Show inbox.")
 	flag.StringVar(&receiver, "send", receiver, "Receiver unit fingerprint.")
 	flag.StringVar(&message, "message", message, "Message body or file path if prefixed by @.")
+	flag.StringVar(&output, "output", output, "Write message body to this file instead of the standard output.")
 	flag.BoolVar(&del, "delete", del, "Delete the specified message.")
 	flag.BoolVar(&unread, "unread", unread, "Unread the specified message.")
+	flag.BoolVar(&clear, "clear", unread, "Delete all messages of the given page of the inbox.")
 	flag.IntVar(&page, "page", page, "Inbox page.")
 	flag.IntVar(&id, "id", id, "Message id.")
 }
 
-func showInbox(box map[string]interface{}) {
+func showInbox(server *api.API, box map[string]interface{}) {
 	messages := box["messages"].([]interface{})
 	numMessages := len(messages)
 
 	if numMessages > 0 {
-		records := box["records"].(float64)
-		pages := box["pages"].(float64)
-		columns := []string{
-			"ID",
-			"Date",
-			"Sender",
-		}
-		rows := [][]string{}
-
-		for _, m := range messages {
-			var row []string
-			msg := m.(map[string]interface{})
-
-			row = []string{
-				fmt.Sprintf("%d", int(msg["id"].(float64))),
-				msg["created_at"].(string),
-				fmt.Sprintf("%s@%s", msg["sender_name"], msg["sender"]),
-			}
-
-			if msg["seen_at"] == nil {
-				for i := range row {
-					row[i] = tui.Bold(row[i])
+		if clear {
+			log.Info("clearing %d messages", numMessages)
+			for _, m := range messages {
+				msg := m.(map[string]interface{})
+				msgID := int(msg["id"].(float64))
+				log.Info("deleting message %d ...", msgID)
+				if _, err := server.Client.MarkInboxMessage(msgID, "deleted"); err != nil {
+					log.Error("%v", err)
 				}
 			}
+		} else {
+			records := box["records"].(float64)
+			pages := box["pages"].(float64)
+			columns := []string{
+				"ID",
+				"Date",
+				"Sender",
+			}
+			rows := [][]string{}
 
-			rows = append(rows, row)
+			for _, m := range messages {
+				var row []string
+				msg := m.(map[string]interface{})
+
+				row = []string{
+					fmt.Sprintf("%d", int(msg["id"].(float64))),
+					msg["created_at"].(string),
+					fmt.Sprintf("%s@%s", msg["sender_name"], msg["sender"]),
+				}
+
+				if msg["seen_at"] == nil {
+					for i := range row {
+						row[i] = tui.Bold(row[i])
+					}
+				}
+
+				rows = append(rows, row)
+			}
+
+			fmt.Println()
+			tui.Table(os.Stdout, columns, rows)
+			fmt.Println()
+
+			fmt.Printf("%d of %d (page %d of %d)", numMessages, int(records), page, int(pages))
 		}
-
-		fmt.Println()
-		tui.Table(os.Stdout, columns, rows)
-		fmt.Println()
-
-		fmt.Printf("%d of %d (page %d of %d)", numMessages, int(records), page, int(pages))
 	} else {
 		fmt.Println()
 		fmt.Println(tui.Dim("Inbox is empty."))
@@ -104,8 +120,14 @@ func showInbox(box map[string]interface{}) {
 func showMessage(msg map[string]interface{}) {
 	fmt.Println()
 	fmt.Printf("Message from %s@%s of the %s\n\n", msg["sender_name"], msg["sender"], msg["created_at"])
-	fmt.Printf("%s\n", msg["data"])
-	fmt.Println()
+	if output == "" {
+		fmt.Printf("%s\n", msg["data"])
+		fmt.Println()
+	} else if err := ioutil.WriteFile(output, msg["data"].([]byte), os.ModePerm); err != nil {
+		log.Fatal("error writing to %s: %v", output, err)
+	} else {
+		log.Info("%s written", output)
+	}
 }
 
 func main() {
@@ -183,7 +205,7 @@ func main() {
 				if box, err := server.Client.Inbox(page); err != nil {
 					log.Fatal("%v", err)
 				} else {
-					showInbox(box)
+					showInbox(server, box)
 				}
 			} else if del {
 				log.Info("deleting message %d ...", id)
@@ -205,22 +227,28 @@ func main() {
 					_, _ = server.Client.MarkInboxMessage(id, "seen")
 				}
 			}
+			return
 		} else if receiver != "" {
+			var raw []byte
 			if message == "" {
 				log.Fatal("-message can not be empty")
 			} else if message[0] == '@' {
-				if message, err := ioutil.ReadFile(message[1:]); err != nil {
+				log.Info("reading %s ...", message[1:])
+				if raw, err = ioutil.ReadFile(message[1:]); err != nil {
 					log.Fatal("error reading %s: %v", message[1:], err)
 				}
+			} else {
+				raw = []byte(message)
 			}
 
-			if status, err := server.SendMessage(receiver, []byte(message)); err != nil {
+			if status, err := server.SendMessage(receiver, raw); err != nil {
 				log.Fatal("%d %v", status, err)
 			} else {
 				log.Info("message sent")
 			}
+			return
 		}
-	} else {
-		server.Run(address)
 	}
+
+	server.Run(address)
 }
