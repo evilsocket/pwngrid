@@ -209,6 +209,10 @@ func (c *Client) Unit(fingerprint string) (map[string]interface{}, error) {
 	return c.Get(fmt.Sprintf("/unit/%s", fingerprint), false)
 }
 
+func (c *Client) ReportAP(report interface{}) (map[string]interface{}, error) {
+	return c.Post("/unit/report/ap", report, true)
+}
+
 func (c *Client) Inbox(page int) (map[string]interface{}, error) {
 	return c.Get(fmt.Sprintf("/unit/inbox/?p=%d", page), true)
 }

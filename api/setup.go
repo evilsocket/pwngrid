@@ -64,6 +64,10 @@ func (api *API) setupPeerRoutes() {
 		r.Route("/v1", func(r chi.Router) {
 			// POST /api/v1/data
 			r.Post("/data", api.PeerSetData)
+			r.Route("/report", func(r chi.Router) {
+				// POST /api/v1/report/ap
+				r.Post("/ap", api.PeerReportAP)
+			})
 			r.Route("/inbox", func(r chi.Router) {
 				// /api/v1/inbox/
 				r.Get("/", api.PeerGetInbox)

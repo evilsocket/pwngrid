@@ -5,6 +5,7 @@ import (
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/models"
 	"io/ioutil"
+	"net"
 	"net/http"
 )
 
@@ -31,6 +32,15 @@ func (api *API) UnitReportAP(w http.ResponseWriter, r *http.Request) {
 		log.Warning("error while reading wifi ap from %s: %v", client, err)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
+	}
+
+	if parsed, err := net.ParseMAC(ap.BSSID); err != nil {
+		log.Warning("error while parsing wifi ap bssid %s from %s: %v", client, ap.BSSID, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrEmpty)
+		return
+	} else {
+		// normalize
+		ap.BSSID = parsed.String()
 	}
 
 	if existing := unit.FindAccessPoint(ap.ESSID, ap.BSSID); existing == nil {
