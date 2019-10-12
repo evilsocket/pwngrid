@@ -1,17 +1,15 @@
 dist: bionic
 language: go
 go:
-  - 1.x
+- 1.x
 env:
   global:
-    - LANG=C
-    - LC_ALL=C
+  - LANG=C
+  - LC_ALL=C
 deploy:
   provider: releases
   api_key:
-    secure: vBUokTv94n8s65STUgTiD6I0Iy8KXbBRvQUrAof8XG+U4ZMsH5PmDTpS+wz+SaxI6o0PRkfyOiPVdARhiKAFnfatG3q9EHllMQwqRR2YIju51A3aCxgEJ5uWDoybwQdipERUMMYwUO/8XZaRRpwFD2bdQBFWkBtQyMcAkrEL8BXckwQQ531oDN2hK5gAiTllqsOswV2idwUlBRU9jOtStzff+UgUYsp/ZebsRodyOYkEB2Ev15yARo2HTXbyZ2icwHPtMbx5zmNUSRtxs9a4hfzaK3m6ctK8qLYYUdQvXub/ruuACapdw4Ez88LY1agTecbZhFYmJzv8oANH1e4VUI4owuHnZCpU6LRutS4wOhglrkOrGo6lSUlJeA+RtQjyjBugjej9DDtDyyIlRU1ZaBF3qWR9N5EXKuquf0olOfmUR67ap1NykE9VUpzkYjkoVRTiPs/e2onM/nRNOvAQcIt75FD13u+Y/DcYQ8r7KpMIu1HNdtbVx8gMeq76bRhP1YdDg2jm+DdJ21KWjf5QHsbyoXDfJzdKlCloLIlAU3EPJhMoXsnNzre0/FXeUl6dfteR1axNS6U7e/vKsQ9rlUFZWIQaeVPjfXmFKblNNVQ5uFrrsB/EGHcJl7IUx5fvcRT5hMMNwC660YxVkBXDbRb5fxMW5/+K0BOi9cP6en8=
-  skip_cleanup: true
-  file_glob: true
+    secure: cRewmbA8C27Nf7HflMf8NNpJQYtfcDW80un/RmUp0TSEOwHcxcbzXBgsXDhtZdrwGGlNc61y3K/3kW4As0FYFbhur4KUa1gF036corQRA6IP1wiXmd9Wcl8dkAlCo7+PQTuFyT2cQoddtA9Z9vL688KTOtKMa3qTciVJfXIkGlU3w8Ib2SZG6zpuV/a53yF1i/gXs+3oyi5Kmgxzssc1wHSOMmdZoLyLpzJWk+6lzZCYjbbnhYovUxPNakj0E+b5KVqGeOwrNNnlJbMjui+LqQ3wHyF3h6/7pmBO35m5zSDt5gel8tuv/Jnwsp7AaQvqOMbkCqGOWVvJhQ5cRSZaxqbDXPwY58NMTkZqBbh0EWWosmOApo3nUgkdjmdZgzjhHQdJRYN9F8b1MG2NrhF1TkaVKTa3HcOFxKVYIJ+v/BJL+3PDvyacMRMT6O9bvUy7vv6XO0w9Er8jZDXoYP1XusjI2gmpSl8FF8Jk/9tC/BTMs6qWbeL5aK43GhSo/Z+f0wvi2fyerv6cb4548NcM9Ls/0Frd/vgQxfI1lq4t2foB5h412fLhLzMlwCYfu+D4Q3Kdx6RBgYTOi+1BYPZd9sapXgWYh9Rp1Kmk2YXQMietycdIUYbzhqShxXpRuUGc8wNOX2tjZsAji/mN9b9CWhI2h/BTqrSO0jpwcpVfZzg=
   file:
     - build/pwngrid_*.zip
     - build/pwngrid_*.sha256
@@ -21,7 +19,7 @@ deploy:
 cache:
   apt: true
 before_script:
-  - sudo apt-get -y update || true
+- sudo apt-get -y update || true
 script:
-  - make clean
-  - make release_files
+- make clean
+- make release_files
