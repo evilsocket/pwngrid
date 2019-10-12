@@ -23,4 +23,3 @@ before_script:
 script:
 - make clean
 - make release_files
-- mv build/*.* .
