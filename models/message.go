@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -21,4 +22,14 @@ type Message struct {
 	Sender     string     `gorm:"size:255;not null" json:"sender"`
 	Data       string     `gorm:"size:512000;not null" json:"-"`
 	Signature  string     `gorm:"size:10000;not null" json:"-"`
+}
+
+func ValidateMessage(data, signature string) error {
+	// validate max sizes
+	if dataSize := len(data); dataSize > MessageDataMaxSize {
+		return fmt.Errorf("max message data size is %d", MessageDataMaxSize)
+	} else if sigSize := len(signature); sigSize > MessageSignatureMaxSize {
+		return fmt.Errorf("max message signature size is %d", MessageSignatureMaxSize)
+	}
+	return nil
 }

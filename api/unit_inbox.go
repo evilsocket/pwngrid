@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/crypto"
 	"github.com/evilsocket/pwngrid/models"
@@ -12,6 +12,14 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+)
+
+var (
+	ErrRecNotFound      = errors.New("recipient not found")
+	ErrMessageNotFound  = errors.New("message not found")
+	ErrInvalidKey       = errors.New("invalid public key")
+	ErrInvalidSignature = errors.New("can't verify signature")
+	ErrDecoding         = errors.New("error decoding data")
 )
 
 func (api *API) GetInbox(w http.ResponseWriter, r *http.Request) {
@@ -55,12 +63,11 @@ func (api *API) GetInboxMessage(w http.ResponseWriter, r *http.Request) {
 
 	msgIDParam := chi.URLParam(r, "msg_id")
 	msgID, err := strconv.Atoi(msgIDParam)
-
 	if err != nil {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	} else if message := unit.GetInboxMessage(msgID); message == nil {
-		ERROR(w, http.StatusNotFound, ErrEmpty)
+		ERROR(w, http.StatusNotFound, ErrMessageNotFound)
 		return
 	} else {
 		JSON(w, http.StatusOK, fullMessage{
@@ -92,7 +99,7 @@ func (api *API) MarkInboxMessage(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	} else if message := unit.GetInboxMessage(msgID); message == nil {
-		ERROR(w, http.StatusNotFound, ErrEmpty)
+		ERROR(w, http.StatusNotFound, ErrMessageNotFound)
 		return
 	} else if markAs == "seen" {
 		if err := models.UpdateFields(message, map[string]interface{}{"seen_at": &now}).Error; err != nil {
@@ -135,7 +142,7 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	dstUnitFingerprint := chi.URLParam(r, "fingerprint")
 	dstUnit := models.FindUnitByFingerprint(dstUnitFingerprint)
 	if dstUnit == nil {
-		ERROR(w, http.StatusNotFound, ErrEmpty)
+		ERROR(w, http.StatusNotFound, ErrRecNotFound)
 		return
 	}
 
@@ -149,20 +156,15 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 
 	var message Message
 	if err = json.Unmarshal(body, &message); err != nil {
-		log.Warning("error while decoding message from %s: %v", srcUnit.Identity(), err)
+		log.Debug("error while decoding message from %s: %v", srcUnit.Identity(), err)
 		log.Debug("%s", body)
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	// validate sizes
-	if dataSize := len(message.Data); dataSize > models.MessageDataMaxSize {
-		log.Warning("client %s sent a message of size %d", srcUnit.Identity(), dataSize)
-		ERROR(w, http.StatusUnprocessableEntity, fmt.Errorf("max message data size is %d", models.MessageDataMaxSize))
-		return
-	} else if sigSize := len(message.Signature); sigSize > models.MessageSignatureMaxSize {
-		log.Warning("client %s sent a message signature of size %d", srcUnit.Identity(), sigSize)
-		ERROR(w, http.StatusUnprocessableEntity, fmt.Errorf("max message signature size is %d", models.MessageSignatureMaxSize))
+	if err := models.ValidateMessage(message.Data, message.Signature); err != nil {
+		log.Warning("client %s sent a broken message structure: %v", srcUnit.Identity(), err)
+		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
@@ -171,7 +173,7 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Warning("error decoding key from %s: %v", srcUnit.Identity(), err)
 		log.Debug("%s", srcUnit.PublicKey)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrInvalidKey)
 		return
 	}
 
@@ -180,7 +182,7 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Warning("error decoding message from %s: %v", srcUnit.Identity(), err)
 		log.Debug("%s", message.Data)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrDecoding)
 		return
 	}
 
@@ -188,14 +190,14 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Warning("error decoding signature from %s: %v", srcUnit.Identity(), err)
 		log.Debug("%s", message.Signature)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrDecoding)
 		return
 	}
 
 	if err := srcKeys.VerifyMessage(data, signature); err != nil {
 		log.Warning("error verifying signature from %s: %v", srcUnit.Identity(), err)
 		log.Debug("%s", message.Signature)
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		ERROR(w, http.StatusUnprocessableEntity, ErrInvalidSignature)
 		return
 	}
 
@@ -210,7 +212,7 @@ func (api *API) SendMessageTo(w http.ResponseWriter, r *http.Request) {
 
 	if err := models.Create(&msg).Error; err != nil {
 		log.Warning("error creating msg %v from %s: %v", msg, client, err)
-		ERROR(w, http.StatusInternalServerError, err)
+		ERROR(w, http.StatusInternalServerError, ErrEmpty)
 		return
 	}
 

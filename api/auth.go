@@ -73,7 +73,7 @@ func Authenticate(w http.ResponseWriter, r *http.Request) *models.Unit{
 
 	claims, err := validateToken(tokenHeader)
 	if err != nil {
-		log.Warning("token error for %s: %v", client, err)
+		log.Debug("token error for %s: %v", client, err)
 		ERROR(w, http.StatusUnauthorized, ErrUnauthorized)
 		return nil
 	}
