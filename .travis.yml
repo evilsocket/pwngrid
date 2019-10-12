@@ -18,9 +18,6 @@ deploy:
   on:
     tags: true
     repo: evilsocket/pwngrid
-branches:
-  only:
-    - "/^v[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9]+?$/"
 cache:
   apt: true
 before_script:
