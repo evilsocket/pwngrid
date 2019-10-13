@@ -209,7 +209,7 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 	}
 
 	// basic consistency check
-	if peer.Keys.FingerprintHex != fingerprint {
+	if peer.Keys != nil && peer.Keys.FingerprintHex != fingerprint {
 		return fmt.Errorf("peer %x is advertising fingerprint %s, but it should be %s", peer.SessionID, fingerprint, peer.Keys.FingerprintHex)
 	}
 
