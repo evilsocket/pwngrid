@@ -74,7 +74,7 @@ func MakeLocalPeer(name string, keys *crypto.KeyPair) *Peer {
 	peer.SessionIDStr = strings.Join(parts, ":")
 
 	peer.AdvData.Store("name", name)
-	peer.AdvData.Store("public_key", keys.PublicPEM)
+	peer.AdvData.Store("public_key", base64.StdEncoding.EncodeToString(peer.Keys.PublicPEM))
 	peer.AdvData.Store("identity", keys.FingerprintHex)
 	peer.AdvData.Store("version", version.Version)
 	peer.AdvData.Store("session_id", peer.SessionIDStr)
