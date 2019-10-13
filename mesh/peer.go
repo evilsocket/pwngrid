@@ -349,7 +349,7 @@ func (peer *Peer) advertise() {
 			net.HardwareAddr(peer.SessionID),
 			wifi.BroadcastAddr,
 			adv,
-			true)
+			false) // set compression to true if using signature
 		if err != nil {
 			log.Error("could not encapsulate %d bytes of advertisement data: %v", len(adv), err)
 			return

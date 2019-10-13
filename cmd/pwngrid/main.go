@@ -12,29 +12,34 @@ import (
 	"github.com/evilsocket/pwngrid/utils"
 	"github.com/evilsocket/pwngrid/version"
 	"github.com/joho/godotenv"
+	"os"
+	"os/signal"
+	"runtime/pprof"
 	"time"
 )
 
 var (
-	debug    = false
-	routes   = false
-	ver      = false
-	wait     = false
-	inbox    = false
-	del      = false
-	unread   = false
-	clear    = false
-	receiver = ""
-	message  = ""
-	output   = ""
-	page     = 1
-	id       = 0
-	address  = "0.0.0.0:8666"
-	env      = ".env"
-	iface    = "mon0"
-	keysPath = ""
-	keys     = (*crypto.KeyPair)(nil)
-	peer     = (*mesh.Peer)(nil)
+	debug      = false
+	routes     = false
+	ver        = false
+	wait       = false
+	inbox      = false
+	del        = false
+	unread     = false
+	clear      = false
+	receiver   = ""
+	message    = ""
+	output     = ""
+	page       = 1
+	id         = 0
+	address    = "0.0.0.0:8666"
+	env        = ".env"
+	iface      = "mon0"
+	keysPath   = ""
+	keys       = (*crypto.KeyPair)(nil)
+	peer       = (*mesh.Peer)(nil)
+	cpuProfile = ""
+	memProfile = ""
 )
 
 func init() {
@@ -62,12 +67,52 @@ func init() {
 	flag.BoolVar(&clear, "clear", unread, "Delete all messages of the given page of the inbox.")
 	flag.IntVar(&page, "page", page, "Inbox page.")
 	flag.IntVar(&id, "id", id, "Message id.")
+
+	flag.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "Generate CPU profile to this file.")
+	flag.StringVar(&memProfile, "mem-profile", cpuProfile, "Generate memory profile to this file.")
+}
+
+func cleanup() {
+	if cpuProfile != "" {
+		log.Info("writing CPU profile to %s ...", cpuProfile)
+		pprof.StopCPUProfile()
+	}
+
+	if memProfile != "" {
+		log.Info("writing memory profile to %s ...", memProfile)
+		f, err := os.Create(memProfile)
+		if err != nil {
+			log.Fatal("%v", err)
+		}
+		pprof.WriteHeapProfile(f)
+		f.Close()
+	}
 }
 
 func main() {
 	var err error
 
 	flag.Parse()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func(){
+		for sig := range c {
+			log.Warning("received signal %v", sig)
+			cleanup()
+			os.Exit(0)
+		}
+	}()
+
+	if cpuProfile != "" {
+		f, err := os.Create(cpuProfile)
+		if err != nil {
+			log.Fatal("%v", err)
+		}
+		pprof.StartCPUProfile(f)
+	}
+
+	defer cleanup()
 
 	if ver {
 		fmt.Println(version.Version)
