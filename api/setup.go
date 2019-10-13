@@ -72,8 +72,8 @@ func (api *API) setupPeerRoutes() {
 				// GET /api/v1/mesh/<status>
 				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)
 
-				// POST /api/v1/mesh/data
-				r.Post("/data", api.PeerGetMeshData)
+				// GET /api/v1/mesh/data
+				r.Get("/data", api.PeerGetMeshData)
 				// POST /api/v1/mesh/data
 				r.Post("/data", api.PeerSetMeshData)
 			})
