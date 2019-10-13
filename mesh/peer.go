@@ -310,6 +310,8 @@ func (peer *Peer) advertise() {
 		// add the signature to the advertisement itself and encode again
 		data["signature"] = base64.StdEncoding.EncodeToString(signature)
 
+		log.Debug("advertising:\n%+v", data)
+
 		err, raw := wifi.Pack(
 			net.HardwareAddr(peer.SessionID),
 			wifi.BroadcastAddr,
