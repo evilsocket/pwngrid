@@ -126,7 +126,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 
 	signature64, found := adv["signature"].(string)
 	if !found {
-		return nil, fmt.Errorf("peer %s is advertising unsigned data %+v", fingerprint, adv)
+		return nil, fmt.Errorf("peer %s is advertising unsigned data", fingerprint)
 	}
 
 	signature, err := base64.StdEncoding.DecodeString(signature64)
