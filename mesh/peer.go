@@ -126,7 +126,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 
 	signature64, found := adv["signature"].(string)
 	if !found {
-		return nil, fmt.Errorf("peer %s is advertising unsigned data", fingerprint)
+		return nil, fmt.Errorf("peer %s is advertising unsigned data %+v", fingerprint, adv)
 	}
 
 	signature, err := base64.StdEncoding.DecodeString(signature64)
@@ -316,6 +316,11 @@ func (peer *Peer) advertise() {
 
 		// add the signature to the advertisement itself and encode again
 		data["signature"] = base64.StdEncoding.EncodeToString(signature)
+		adv, err = json.Marshal(data)
+		if err != nil {
+			log.Error("could not serialize signed advertisement data: %v", err)
+			return
+		}
 
 		// log.Debug("advertising:\n%+v", data)
 
