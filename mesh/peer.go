@@ -139,7 +139,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 			return nil, fmt.Errorf("peer %x is advertising fingerprint %s, but it should be %s", peer.SessionID, fingerprint, peer.Keys.FingerprintHex)
 		}
 	} else if !found {
-		log.Warning("peer %s is not advertising any public key", fingerprint)
+		log.Debug("peer %s is not advertising any public key", fingerprint)
 	}
 
 	/*
