@@ -8,6 +8,7 @@ require (
 	github.com/evilsocket/islazy v1.10.4
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/docgen v1.0.5
+	github.com/google/gopacket v1.1.17
 	github.com/jinzhu/gorm v1.9.11
 	github.com/joho/godotenv v1.3.0
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect

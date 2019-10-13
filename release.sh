@@ -1,7 +1,7 @@
 #!/bin/bash
 # nothing to see here, just a utility i use to create new releases ^_^
 
-VERSION_FILE=$(dirname "${BASH_SOURCE[0]}")/api/version.go
+VERSION_FILE=$(dirname "${BASH_SOURCE[0]}")/version/ver.go
 echo "version file is $VERSION_FILE"
 CURRENT_VERSION=$(cat $VERSION_FILE | grep Version | cut -d '"' -f 2)
 TO_UPDATE=(

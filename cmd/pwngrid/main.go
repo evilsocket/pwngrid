@@ -7,7 +7,10 @@ import (
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/api"
 	"github.com/evilsocket/pwngrid/crypto"
+	"github.com/evilsocket/pwngrid/mesh"
 	"github.com/evilsocket/pwngrid/models"
+	"github.com/evilsocket/pwngrid/utils"
+	"github.com/evilsocket/pwngrid/version"
 	"github.com/joho/godotenv"
 	"time"
 )
@@ -20,7 +23,7 @@ var (
 	inbox    = false
 	del      = false
 	unread   = false
-	clear   = false
+	clear    = false
 	receiver = ""
 	message  = ""
 	output   = ""
@@ -28,8 +31,10 @@ var (
 	id       = 0
 	address  = "0.0.0.0:8666"
 	env      = ".env"
+	iface    = "mon0"
 	keysPath = ""
 	keys     = (*crypto.KeyPair)(nil)
+	peer     = (*mesh.Peer)(nil)
 )
 
 func init() {
@@ -44,6 +49,9 @@ func init() {
 	flag.BoolVar(&wait, "wait", wait, "Wait for keys to be generated.")
 	flag.IntVar(&api.ClientTimeout, "client-timeout", api.ClientTimeout, "Timeout in seconds for requests to the server when in peer mode.")
 	flag.StringVar(&api.ClientTokenFile, "client-token", api.ClientTokenFile, "File where to store the API token.")
+
+	flag.StringVar(&iface, "iface", iface, "Monitor interface to use for mesh advertising.")
+	flag.IntVar(&mesh.SignalingPeriod, "signaling-period", mesh.SignalingPeriod, "Period in milliseconds for mesh signaling frames.")
 
 	flag.BoolVar(&inbox, "inbox", inbox, "Show inbox.")
 	flag.StringVar(&receiver, "send", receiver, "Receiver unit fingerprint.")
@@ -62,7 +70,7 @@ func main() {
 	flag.Parse()
 
 	if ver {
-		fmt.Println(api.Version)
+		fmt.Println(version.Version)
 		return
 	}
 
@@ -79,15 +87,21 @@ func main() {
 	defer log.Close()
 
 	mode := "server"
+	if keysPath != "" {
+		mode = "peer"
+	}
 
 	if (inbox || receiver != "") && keysPath == "" {
 		keysPath = "/etc/pwnagotchi/"
 	}
 
-	if keysPath != "" {
+	log.Info("pwngrid v%s starting in %s mode ...", version.Version, mode)
+
+	if mode == "peer" {
 		mode = "peer"
 
 		if wait {
+			// wait for keys to be generated
 			privPath := crypto.PrivatePath(keysPath)
 			for {
 				if !fs.Exists(privPath) {
@@ -105,9 +119,12 @@ func main() {
 		if keys, err = crypto.Load(keysPath); err != nil {
 			log.Fatal("error while loading keys from %s: %v", keysPath, err)
 		}
-	}
 
-	log.Info("pwngrid v%s starting in %s mode ...", api.Version, mode)
+		peer = mesh.MakeLocalPeer(utils.Hostname(), keys)
+		if err = peer.StartAdvertising(iface); err != nil {
+			log.Fatal("error while starting signaling: %v", err)
+		}
+	}
 
 	if keys == nil {
 		if err := godotenv.Load(env); err != nil {
@@ -119,7 +136,7 @@ func main() {
 		}
 	}
 
-	err, server := api.Setup(keys, routes)
+	err, server := api.Setup(keys, peer, routes)
 	if err != nil {
 		log.Fatal("%v", err)
 	}

@@ -8,10 +8,10 @@ import (
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/pwngrid/crypto"
 	"github.com/evilsocket/pwngrid/models"
+	"github.com/evilsocket/pwngrid/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -68,16 +68,8 @@ func NewClient(keys *crypto.KeyPair) *Client {
 }
 
 func (c *Client) enroll() error {
-	name, err := os.Hostname()
-	if err != nil {
-		return err
-	}
+	identity := fmt.Sprintf("%s@%s", utils.Hostname(), c.keys.FingerprintHex)
 
-	if strings.HasSuffix(name, ".local") {
-		name = strings.Replace(name, ".local", "", -1)
-	}
-
-	identity := fmt.Sprintf("%s@%s", name, c.keys.FingerprintHex)
 	log.Info("refreshing api token as %s ...", identity)
 
 	signature, err := c.keys.SignMessage([]byte(identity))

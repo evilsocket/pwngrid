@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/evilsocket/pwngrid/crypto"
+	"github.com/evilsocket/pwngrid/mesh"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/docgen"
@@ -16,6 +17,7 @@ import (
 type API struct {
 	Router *chi.Mux
 	Keys   *crypto.KeyPair
+	Peer   *mesh.Peer
 	Client *Client
 }
 
@@ -26,21 +28,21 @@ func (api *API) setupServerRoutes() {
 		r.Options("/", CORSOptionHandler)
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/units", func(r chi.Router) {
-				// /api/v1/units/
+				// GET /api/v1/units/
 				r.Get("/", api.ListUnits)
-				// /api/v1/units/by_country
+				// GET /api/v1/units/by_country
 				r.Get("/by_country", api.UnitsByCountry)
 			})
 			r.Route("/unit", func(r chi.Router) {
-				// /api/v1/unit/<fingerprint>
+				// GET /api/v1/unit/<fingerprint>
 				r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
 				r.Route("/inbox", func(r chi.Router) {
-					// /api/v1/unit/inbox/
+					// GET /api/v1/unit/inbox/
 					r.Get("/", api.GetInbox)
 					r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
-						// /api/v1/unit/inbox/<msg_id>
+						// GET /api/v1/unit/inbox/<msg_id>
 						r.Get("/", api.GetInboxMessage)
-						// /api/v1/unit/inbox/<msg_id>/<mark>
+						// GET /api/v1/unit/inbox/<msg_id>/<mark>
 						r.Get("/{mark:[a-z]+}", api.MarkInboxMessage)
 					})
 				})
@@ -63,19 +65,27 @@ func (api *API) setupPeerRoutes() {
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Options("/", CORSOptionHandler)
 		r.Route("/v1", func(r chi.Router) {
+			r.Route("/mesh", func(r chi.Router) {
+				// POST /api/v1/mesh/data
+				r.Post("/data", api.PeerSetMeshData)
+				// GET /api/v1/mesh/<status>
+				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)
+			})
+
 			// POST /api/v1/data
 			r.Post("/data", api.PeerSetData)
+
 			r.Route("/report", func(r chi.Router) {
 				// POST /api/v1/report/ap
 				r.Post("/ap", api.PeerReportAP)
 			})
 			r.Route("/inbox", func(r chi.Router) {
-				// /api/v1/inbox/
+				// GET /api/v1/inbox/
 				r.Get("/", api.PeerGetInbox)
 				r.Route("/{msg_id:[0-9]+}", func(r chi.Router) {
-					// /api/v1/inbox/<msg_id>
+					// GET /api/v1/inbox/<msg_id>
 					r.Get("/", api.PeerGetInboxMessage)
-					// /api/v1/inbox/<msg_id>/<mark>
+					// GET /api/v1/inbox/<msg_id>/<mark>
 					r.Get("/{mark:[a-z]+}", api.PeerMarkInboxMessage)
 				})
 			})
@@ -84,22 +94,22 @@ func (api *API) setupPeerRoutes() {
 				r.Post("/{fingerprint:[a-fA-F0-9]+}/inbox", api.PeerSendMessageTo)
 			})
 			r.Route("/units", func(r chi.Router) {
-				// /api/v1/units/
+				// GET /api/v1/units/
 				r.Get("/", api.PeerListUnits)
 			})
 		})
 	})
 }
 
-func Setup(keys *crypto.KeyPair, routes bool) (err error, api *API) {
+func Setup(keys *crypto.KeyPair, peer *mesh.Peer, routes bool) (err error, api *API) {
 	api = &API{
 		Router: chi.NewRouter(),
 		Keys:   keys,
+		Peer:   peer,
 		Client: NewClient(keys),
 	}
 
 	api.Router.Use(CORS)
-
 	if api.Keys == nil {
 		api.Router.Use(middleware.DefaultCompress)
 		api.setupServerRoutes()
