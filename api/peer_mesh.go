@@ -18,6 +18,7 @@ func (api *API) PeerSetSignaling(w http.ResponseWriter, r *http.Request) {
 		api.Peer.Advertise(false)
 	} else {
 		ERROR(w, http.StatusNotFound, ErrEmpty)
+		return
 	}
 
 	JSON(w, http.StatusOK, map[string]interface{}{
