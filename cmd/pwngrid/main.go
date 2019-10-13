@@ -131,22 +131,20 @@ func main() {
 	}
 	defer log.Close()
 
+	if (inbox || receiver != "") && keysPath == "" {
+		keysPath = "/etc/pwnagotchi/"
+	}
+
 	mode := "server"
 	if keysPath != "" {
 		mode = "peer"
 	}
 
-	if (inbox || receiver != "") && keysPath == "" {
-		keysPath = "/etc/pwnagotchi/"
-	}
-
 	log.Info("pwngrid v%s starting in %s mode ...", version.Version, mode)
 
 	if mode == "peer" {
-		mode = "peer"
-
+		// wait for keys to be generated
 		if wait {
-			// wait for keys to be generated
 			privPath := crypto.PrivatePath(keysPath)
 			for {
 				if !fs.Exists(privPath) {
