@@ -185,6 +185,12 @@ func (c *Client) SetData(newData map[string]interface{}) map[string]interface{} 
 	return c.data
 }
 
+func (c *Client) Data() map[string]interface{} {
+	c.Lock()
+	defer c.Unlock()
+	return c.data
+}
+
 func (c *Client) Request(method string, path string, data interface{}, auth bool) (map[string]interface{}, error) {
 	c.Lock()
 	defer c.Unlock()

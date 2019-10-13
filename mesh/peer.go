@@ -297,18 +297,29 @@ func (peer *Peer) SetData(adv map[string]interface{}) {
 	}
 }
 
+func (peer *Peer) Data() map[string]interface{} {
+	peer.Lock()
+	defer peer.Unlock()
+	return peer.dataFrame()
+}
+
+func (peer *Peer) dataFrame() map[string]interface{} {
+	data := map[string]interface{}{}
+	peer.AdvData.Range(func(key, value interface{}) bool {
+		data[key.(string)] = value
+		return true
+	})
+	return data
+}
+
 func (peer *Peer) advertise() {
 	peer.Lock()
 	defer peer.Unlock()
 
 	if peer.advEnabled {
-		data := map[string]interface{}{
-			"timestamp": time.Now().Unix(),
-		}
-		peer.AdvData.Range(func(key, value interface{}) bool {
-			data[key.(string)] = value
-			return true
-		})
+		data := peer.dataFrame()
+
+		data["timestamp"] = time.Now().Unix()
 		adv, err := json.Marshal(data)
 		if err != nil {
 			log.Error("could not serialize advertisement data: %v", err)

@@ -7,6 +7,11 @@ import (
 	"net/http"
 )
 
+// GET /api/v1/data
+func (api *API) PeerGetData(w http.ResponseWriter, r *http.Request) {
+	JSON(w, http.StatusOK, api.Client.Data())
+}
+
 // POST /api/v1/data
 func (api *API) PeerSetData(w http.ResponseWriter, r *http.Request) {
 	var newData map[string]interface{}

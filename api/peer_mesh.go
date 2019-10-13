@@ -3,10 +3,28 @@ package api
 import (
 	"encoding/json"
 	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/pwngrid/mesh"
 	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
+	"sort"
 )
+
+// GET /api/v1/mesh/<status>
+func (api *API) PeerGetPeers(w http.ResponseWriter, r *http.Request) {
+	peers := make([]*mesh.Peer, 0)
+	mesh.Peers.Range(func(key, value interface{}) bool {
+		peers = append(peers, value.(*mesh.Peer))
+		return true
+	})
+
+	// closer first
+	sort.Slice(peers, func(i, j int) bool {
+		return peers[i].RSSI > peers[j].RSSI
+	})
+
+	JSON(w, http.StatusOK, peers)
+}
 
 // GET /api/v1/mesh/<status>
 func (api *API) PeerSetSignaling(w http.ResponseWriter, r *http.Request) {
@@ -24,6 +42,11 @@ func (api *API) PeerSetSignaling(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 	})
+}
+
+// GET /api/v1/mesh/data
+func (api *API) PeerGetMeshData(w http.ResponseWriter, r *http.Request) {
+	JSON(w, http.StatusOK, api.Peer.Data())
 }
 
 // POST /api/v1/mesh/data

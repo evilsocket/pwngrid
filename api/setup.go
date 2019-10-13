@@ -66,12 +66,20 @@ func (api *API) setupPeerRoutes() {
 		r.Options("/", CORSOptionHandler)
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/mesh", func(r chi.Router) {
-				// POST /api/v1/mesh/data
-				r.Post("/data", api.PeerSetMeshData)
+				// GET /api/v1/mesh/peers
+				r.Get("/peers", api.PeerGetPeers)
+
 				// GET /api/v1/mesh/<status>
 				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)
+
+				// POST /api/v1/mesh/data
+				r.Post("/data", api.PeerGetMeshData)
+				// POST /api/v1/mesh/data
+				r.Post("/data", api.PeerSetMeshData)
 			})
 
+			// GET /api/v1/data
+			r.Post("/data", api.PeerGetData)
 			// POST /api/v1/data
 			r.Post("/data", api.PeerSetData)
 
