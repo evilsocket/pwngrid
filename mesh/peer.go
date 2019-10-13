@@ -90,8 +90,15 @@ func MakeLocalPeer(name string, keys *crypto.KeyPair) *Peer {
 func (peer *Peer) Advertise(enabled bool) {
 	peer.Lock()
 	defer peer.Unlock()
+	diff := peer.advEnabled != enabled
 	peer.advEnabled = enabled
-	log.Info("peer advertisement enabled: %s", enabled)
+	if diff {
+		if enabled {
+			log.Info("peer advertisement enabled")
+		} else {
+			log.Info("peer advertisement disabled")
+		}
+	}
 }
 
 func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]interface{}) (peer *Peer, err error) {
@@ -287,7 +294,7 @@ func (peer *Peer) advertise() {
 	defer peer.Unlock()
 
 	if peer.advEnabled {
-		data := map[string]interface{} {
+		data := map[string]interface{}{
 			"timestamp": time.Now().Unix(),
 		}
 		peer.AdvData.Range(func(key, value interface{}) bool {
