@@ -124,51 +124,55 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 		return nil, fmt.Errorf("peer %x is not advertising any identity", peer.SessionID)
 	}
 
-	signature64, found := adv["signature"].(string)
-	if !found {
-		return nil, fmt.Errorf("peer %s is advertising unsigned data", fingerprint)
-	}
-
-	signature, err := base64.StdEncoding.DecodeString(signature64)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding peer %s signature: %s", fingerprint, err)
-	}
-
-	pubKey64, found := adv["public_key"].(string)
-	if !found {
-		return nil, fmt.Errorf("peer %s is not advertising any public key", fingerprint)
-	}
-
-	pubKey, err := base64.StdEncoding.DecodeString(pubKey64)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding peer %s public key: %s", fingerprint, err)
-	}
-
-	peer.Keys, err = crypto.FromPublicPEM(string(pubKey))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing peer %s public key: %s", fingerprint, err)
-	}
-
 	// basic consistency check
 	if peer.Keys.FingerprintHex != fingerprint {
 		return nil, fmt.Errorf("peer %x is advertising fingerprint %s, but it should be %s", peer.SessionID, fingerprint, peer.Keys.FingerprintHex)
 	}
 
-	// the signature is SIGN(advertisement), so we need to remove the signature field and convert back to json.
-	// NOTE: fortunately, keys will be always sorted, so we don't have to do anything in order to guarantee signature
-	// consistency (https://stackoverflow.com/questions/18668652/how-to-produce-json-with-sorted-keys-in-go)
-	signedMap := adv
-	delete(signedMap, "signature")
+	/*
+		No need for signature in the advertisement protocol, however:
 
-	signedData, err := json.Marshal(signedMap)
-	if err != nil {
-		return nil, fmt.Errorf("error packing data for signature verification: %v", err)
-	}
+		signature64, found := adv["signature"].(string)
+		if !found {
+			return nil, fmt.Errorf("peer %s is advertising unsigned data", fingerprint)
+		}
 
-	// verify the signature
-	if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
-		return nil, fmt.Errorf("peer %x signature is invalid", peer.SessionID)
-	}
+		signature, err := base64.StdEncoding.DecodeString(signature64)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding peer %s signature: %s", fingerprint, err)
+		}
+
+		pubKey64, found := adv["public_key"].(string)
+		if !found {
+			return nil, fmt.Errorf("peer %s is not advertising any public key", fingerprint)
+		}
+
+		pubKey, err := base64.StdEncoding.DecodeString(pubKey64)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding peer %s public key: %s", fingerprint, err)
+		}
+
+		peer.Keys, err = crypto.FromPublicPEM(string(pubKey))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing peer %s public key: %s", fingerprint, err)
+		}
+
+		// the signature is SIGN(advertisement), so we need to remove the signature field and convert back to json.
+		// NOTE: fortunately, keys will be always sorted, so we don't have to do anything in order to guarantee signature
+		// consistency (https://stackoverflow.com/questions/18668652/how-to-produce-json-with-sorted-keys-in-go)
+		signedMap := adv
+		delete(signedMap, "signature")
+
+		signedData, err := json.Marshal(signedMap)
+		if err != nil {
+			return nil, fmt.Errorf("error packing data for signature verification: %v", err)
+		}
+
+		// verify the signature
+		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
+			return nil, fmt.Errorf("peer %x signature is invalid", peer.SessionID)
+		}
+	 */
 
 	for key, value := range adv {
 		peer.AdvData.Store(key, value)
@@ -211,31 +215,35 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 		return fmt.Errorf("peer %x is advertising fingerprint %s, but it should be %s", peer.SessionID, fingerprint, peer.Keys.FingerprintHex)
 	}
 
-	signature64, found := adv["signature"].(string)
-	if !found {
-		return fmt.Errorf("peer %x is not advertising any signature", peer.SessionID)
-	}
+	/*
+		No need for signature in the advertisement protocol, however:
 
-	signature, err := base64.StdEncoding.DecodeString(signature64)
-	if err != nil {
-		return fmt.Errorf("error decoding peer %d signature: %s", peer.SessionID, err)
-	}
+		signature64, found := adv["signature"].(string)
+		if !found {
+			return fmt.Errorf("peer %x is not advertising any signature", peer.SessionID)
+		}
 
-	// the signature is SIGN(advertisement), so we need to remove the signature field and convert back to json.
-	// NOTE: fortunately, keys will be always sorted, so we don't have to do anything in order to guarantee signature
-	// consistency (https://stackoverflow.com/questions/18668652/how-to-produce-json-with-sorted-keys-in-go)
-	signedMap := adv
-	delete(signedMap, "signature")
+		signature, err := base64.StdEncoding.DecodeString(signature64)
+		if err != nil {
+			return fmt.Errorf("error decoding peer %d signature: %s", peer.SessionID, err)
+		}
 
-	signedData, err := json.Marshal(signedMap)
-	if err != nil {
-		return fmt.Errorf("error packing data for signature verification: %v", err)
-	}
+		// the signature is SIGN(advertisement), so we need to remove the signature field and convert back to json.
+		// NOTE: fortunately, keys will be always sorted, so we don't have to do anything in order to guarantee signature
+		// consistency (https://stackoverflow.com/questions/18668652/how-to-produce-json-with-sorted-keys-in-go)
+		signedMap := adv
+		delete(signedMap, "signature")
 
-	// verify the signature
-	if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
-		return fmt.Errorf("peer %x signature is invalid", peer.SessionID)
-	}
+		signedData, err := json.Marshal(signedMap)
+		if err != nil {
+			return fmt.Errorf("error packing data for signature verification: %v", err)
+		}
+
+		// verify the signature
+		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
+			return fmt.Errorf("peer %x signature is invalid", peer.SessionID)
+		}
+	 */
 
 	peer.Channel = wifi.Freq2Chan(int(radio.ChannelFrequency))
 	peer.RSSI = int(radio.DBMAntennaSignal)
@@ -307,22 +315,26 @@ func (peer *Peer) advertise() {
 			return
 		}
 
-		// sign the advertisement
-		signature, err := peer.Keys.SignMessage(adv)
-		if err != nil {
-			log.Error("error signing advertisement: %v", err)
-			return
-		}
+		/*
+			No need for signature in the advertisement protocol, however:
 
-		// add the signature to the advertisement itself and encode again
-		data["signature"] = base64.StdEncoding.EncodeToString(signature)
-		adv, err = json.Marshal(data)
-		if err != nil {
-			log.Error("could not serialize signed advertisement data: %v", err)
-			return
-		}
+			// sign the advertisement
+			signature, err := peer.Keys.SignMessage(adv)
+			if err != nil {
+				log.Error("error signing advertisement: %v", err)
+				return
+			}
 
-		// log.Debug("advertising:\n%+v", data)
+			// add the signature to the advertisement itself and encode again
+			data["signature"] = base64.StdEncoding.EncodeToString(signature)
+			adv, err = json.Marshal(data)
+			if err != nil {
+				log.Error("could not serialize signed advertisement data: %v", err)
+				return
+			}
+
+			log.Debug("advertising:\n%+v", data)
+		*/
 
 		err, raw := wifi.Pack(
 			net.HardwareAddr(peer.SessionID),
