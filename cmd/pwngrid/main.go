@@ -124,6 +124,18 @@ func main() {
 		if err = peer.StartAdvertising(iface); err != nil {
 			log.Fatal("error while starting signaling: %v", err)
 		}
+
+		if router, err := mesh.StartRouting(iface, peer); err != nil {
+			log.Fatal("%v", err)
+		} else {
+			router.OnNewPeer(func(ident string, peer *mesh.Peer) {
+				log.Info("detected new peer %s on channel %d", peer.ID(), peer.Channel)
+			})
+			router.OnPeerLost(func(ident string, peer *mesh.Peer) {
+				log.Info("peer %s lost (inactive for %fs)", peer.ID(), peer.InactiveFor())
+			})
+		}
+		log.Info("peer %s signaling is ready", peer.ID())
 	}
 
 	if keys == nil {

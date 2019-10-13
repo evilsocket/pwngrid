@@ -126,27 +126,27 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 
 	signature64, found := adv["signature"].(string)
 	if !found {
-		return nil, fmt.Errorf("peer %x is not advertising any signature", peer.SessionID)
+		return nil, fmt.Errorf("peer %s is advertising unsigned data", fingerprint)
 	}
 
 	signature, err := base64.StdEncoding.DecodeString(signature64)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding peer %d signature: %s", peer.SessionID, err)
+		return nil, fmt.Errorf("error decoding peer %s signature: %s", fingerprint, err)
 	}
 
 	pubKey64, found := adv["public_key"].(string)
 	if !found {
-		return nil, fmt.Errorf("peer %x is not advertising any public key", peer.SessionID)
+		return nil, fmt.Errorf("peer %s is not advertising any public key", fingerprint)
 	}
 
 	pubKey, err := base64.StdEncoding.DecodeString(pubKey64)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding peer %d public key: %s", peer.SessionID, err)
+		return nil, fmt.Errorf("error decoding peer %s public key: %s", fingerprint, err)
 	}
 
 	peer.Keys, err = crypto.FromPublicPEM(string(pubKey))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing peer %d public key: %s", peer.SessionID, err)
+		return nil, fmt.Errorf("error parsing peer %s public key: %s", fingerprint, err)
 	}
 
 	// basic consistency check
@@ -317,7 +317,7 @@ func (peer *Peer) advertise() {
 		// add the signature to the advertisement itself and encode again
 		data["signature"] = base64.StdEncoding.EncodeToString(signature)
 
-		log.Debug("advertising:\n%+v", data)
+		// log.Debug("advertising:\n%+v", data)
 
 		err, raw := wifi.Pack(
 			net.HardwareAddr(peer.SessionID),
