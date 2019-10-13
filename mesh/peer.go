@@ -124,6 +124,21 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 		return nil, fmt.Errorf("peer %x is not advertising any identity", peer.SessionID)
 	}
 
+	pubKey64, found := adv["public_key"].(string)
+	if !found {
+		return nil, fmt.Errorf("peer %s is not advertising any public key", fingerprint)
+	}
+
+	pubKey, err := base64.StdEncoding.DecodeString(pubKey64)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding peer %s public key: %s", fingerprint, err)
+	}
+
+	peer.Keys, err = crypto.FromPublicPEM(string(pubKey))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing peer %s public key: %s", fingerprint, err)
+	}
+
 	// basic consistency check
 	if peer.Keys.FingerprintHex != fingerprint {
 		return nil, fmt.Errorf("peer %x is advertising fingerprint %s, but it should be %s", peer.SessionID, fingerprint, peer.Keys.FingerprintHex)
@@ -140,21 +155,6 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 		signature, err := base64.StdEncoding.DecodeString(signature64)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding peer %s signature: %s", fingerprint, err)
-		}
-
-		pubKey64, found := adv["public_key"].(string)
-		if !found {
-			return nil, fmt.Errorf("peer %s is not advertising any public key", fingerprint)
-		}
-
-		pubKey, err := base64.StdEncoding.DecodeString(pubKey64)
-		if err != nil {
-			return nil, fmt.Errorf("error decoding peer %s public key: %s", fingerprint, err)
-		}
-
-		peer.Keys, err = crypto.FromPublicPEM(string(pubKey))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing peer %s public key: %s", fingerprint, err)
 		}
 
 		// the signature is SIGN(advertisement), so we need to remove the signature field and convert back to json.
