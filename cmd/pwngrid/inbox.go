@@ -82,7 +82,26 @@ func showMessage(msg map[string]interface{}) {
 func doInbox(server *api.API) {
 	var err error
 
-	if inbox {
+	if receiver != "" {
+		var raw []byte
+		if message == "" {
+			log.Fatal("-message can not be empty")
+		} else if message[0] == '@' {
+			log.Info("reading %s ...", message[1:])
+			if raw, err = ioutil.ReadFile(message[1:]); err != nil {
+				log.Fatal("error reading %s: %v", message[1:], err)
+			}
+		} else {
+			raw = []byte(message)
+		}
+
+		if status, err := server.SendMessage(receiver, raw); err != nil {
+			log.Fatal("%d %v", status, err)
+		} else {
+			log.Info("message sent")
+		}
+		os.Exit(0)
+	} else if inbox {
 		if id == 0 {
 			log.Info("fetching inbox ...")
 			if box, err := server.Client.Inbox(page); err != nil {
@@ -109,25 +128,6 @@ func doInbox(server *api.API) {
 				showMessage(msg)
 				_, _ = server.Client.MarkInboxMessage(id, "seen")
 			}
-		}
-		os.Exit(0)
-	} else if receiver != "" {
-		var raw []byte
-		if message == "" {
-			log.Fatal("-message can not be empty")
-		} else if message[0] == '@' {
-			log.Info("reading %s ...", message[1:])
-			if raw, err = ioutil.ReadFile(message[1:]); err != nil {
-				log.Fatal("error reading %s: %v", message[1:], err)
-			}
-		} else {
-			raw = []byte(message)
-		}
-
-		if status, err := server.SendMessage(receiver, raw); err != nil {
-			log.Fatal("%d %v", status, err)
-		} else {
-			log.Info("message sent")
 		}
 		os.Exit(0)
 	}
