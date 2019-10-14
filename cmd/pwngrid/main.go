@@ -170,7 +170,7 @@ func main() {
 		}
 
 		if whoami {
-			log.Info("https://pwnagotchi.ai/pwnfile/#%s", keys.FingerprintHex)
+			log.Info("https://pwnagotchi.ai/pwnfile/#!%s", keys.FingerprintHex)
 			return
 		}
 
