@@ -27,6 +27,7 @@ var (
 	del        = false
 	unread     = false
 	clear      = false
+	whoami     = false
 	receiver   = ""
 	message    = ""
 	output     = ""
@@ -58,6 +59,7 @@ func init() {
 	flag.StringVar(&iface, "iface", iface, "Monitor interface to use for mesh advertising.")
 	flag.IntVar(&mesh.SignalingPeriod, "signaling-period", mesh.SignalingPeriod, "Period in milliseconds for mesh signaling frames.")
 
+	flag.BoolVar(&whoami, "whoami", whoami, "Prints the public key fingerprint and exit.")
 	flag.BoolVar(&inbox, "inbox", inbox, "Show inbox.")
 	flag.StringVar(&receiver, "send", receiver, "Receiver unit fingerprint.")
 	flag.StringVar(&message, "message", message, "Message body or file path if prefixed by @.")
@@ -165,6 +167,11 @@ func main() {
 
 		if keys, err = crypto.Load(keysPath); err != nil {
 			log.Fatal("error while loading keys from %s: %v", keysPath, err)
+		}
+
+		if whoami {
+			log.Info("https://pwnagotchi.ai/pwnfile/#%s", keys.FingerprintHex)
+			return
 		}
 
 		// only start mesh signaling if this is not an inbox action
