@@ -137,7 +137,7 @@ func main() {
 		inbox = true
 	}
 
-	if inbox && keysPath == "" {
+	if (whoami || inbox) && keysPath == "" {
 		keysPath = "/etc/pwnagotchi/"
 	}
 

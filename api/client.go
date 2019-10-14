@@ -18,7 +18,7 @@ import (
 
 var (
 	ClientTimeout   = 60
-	ClientTokenFile = "/root/.api-enrollment.json"
+	ClientTokenFile = "/tmp/pwngrid-api-enrollment.json"
 )
 
 const (
