@@ -6,6 +6,7 @@ import (
 	"github.com/evilsocket/islazy/log"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	"strings"
 	"time"
 )
 
@@ -101,7 +102,24 @@ func (mux *PacketMuxer) OnPacket(cb PacketCallback) {
 }
 
 func (mux *PacketMuxer) Write(data []byte) error {
-	return mux.handle.WritePacketData(data)
+	var err error
+	for attempt := 0; attempt < 5; attempt++ {
+		if err = mux.handle.WritePacketData(data); err == nil {
+			return nil
+		} else if strings.Contains(err.Error(), "temporarily unavailable") {
+			log.Debug("resource temporarily unavailable when sending data")
+			// if it's the last attempt this will set err to nil as we can't really
+			// do a lot about this case, otherwise it'll wait 200ms before the next
+			// attempt is made.
+			err = nil
+			if attempt < 5 {
+				time.Sleep(200 * time.Millisecond)
+			}
+		} else {
+			return nil
+		}
+	}
+	return err
 }
 
 func (mux *PacketMuxer) Start() {
