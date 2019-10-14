@@ -131,7 +131,11 @@ func main() {
 	}
 	defer log.Close()
 
-	if (inbox || receiver != "") && keysPath == "" {
+	if receiver != "" {
+		inbox = true
+	}
+
+	if inbox && keysPath == "" {
 		keysPath = "/etc/pwnagotchi/"
 	}
 
@@ -163,25 +167,28 @@ func main() {
 			log.Fatal("error while loading keys from %s: %v", keysPath, err)
 		}
 
-		peer = mesh.MakeLocalPeer(utils.Hostname(), keys)
-		if err = peer.StartAdvertising(iface); err != nil {
-			log.Fatal("error while starting signaling: %v", err)
-		}
+		// only start mesh signaling if this is not an inbox action
+		if !inbox {
+			peer = mesh.MakeLocalPeer(utils.Hostname(), keys)
+			if err = peer.StartAdvertising(iface); err != nil {
+				log.Fatal("error while starting signaling: %v", err)
+			}
 
-		if router, err := mesh.StartRouting(iface, peer); err != nil {
-			log.Fatal("%v", err)
-		} else {
-			router.OnNewPeer(func(ident string, peer *mesh.Peer) {
-				log.Info("detected new peer %s on channel %d", peer.ID(), peer.Channel)
-			})
-			router.OnPeerLost(func(ident string, peer *mesh.Peer) {
-				log.Info("peer %s lost (inactive for %fs)", peer.ID(), peer.InactiveFor())
-			})
+			if router, err := mesh.StartRouting(iface, peer); err != nil {
+				log.Fatal("%v", err)
+			} else {
+				router.OnNewPeer(func(ident string, peer *mesh.Peer) {
+					log.Info("detected new peer %s on channel %d", peer.ID(), peer.Channel)
+				})
+				router.OnPeerLost(func(ident string, peer *mesh.Peer) {
+					log.Info("peer %s lost (inactive for %fs)", peer.ID(), peer.InactiveFor())
+				})
+			}
+			log.Info("peer %s signaling is ready", peer.ID())
 		}
-		log.Info("peer %s signaling is ready", peer.ID())
 	}
 
-	if keys == nil {
+	if mode == "server" {
 		if err := godotenv.Load(env); err != nil {
 			log.Fatal("%v", err)
 		}

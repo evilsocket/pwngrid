@@ -70,7 +70,7 @@ func NewClient(keys *crypto.KeyPair) *Client {
 func (c *Client) enroll() error {
 	identity := fmt.Sprintf("%s@%s", utils.Hostname(), c.keys.FingerprintHex)
 
-	log.Info("refreshing api token as %s ...", identity)
+	log.Debug("refreshing api token as %s ...", identity)
 
 	signature, err := c.keys.SignMessage([]byte(identity))
 	if err != nil {
