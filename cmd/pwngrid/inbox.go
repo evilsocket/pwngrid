@@ -43,9 +43,9 @@ func showInbox(server *api.API, box map[string]interface{}) {
 					fmt.Sprintf("%s@%s", msg["sender_name"], msg["sender"]),
 				}
 
-				if msg["seen_at"] == nil {
+				if msg["seen_at"] != nil {
 					for i := range row {
-						row[i] = tui.Bold(row[i])
+						row[i] = tui.Dim(row[i])
 					}
 				}
 
