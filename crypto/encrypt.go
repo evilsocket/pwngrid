@@ -16,7 +16,7 @@ const (
 )
 
 func (pair *KeyPair) EncryptFor(cleartext []byte, pubKey *rsa.PublicKey) ([]byte, error) {
-	// generate a random 256 bytes long key
+	// generate a random 32 bytes long key
 	key := make([]byte, AESKEyLength)
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
 		return nil, err
