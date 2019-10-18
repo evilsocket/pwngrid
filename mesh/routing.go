@@ -14,7 +14,7 @@ import (
 
 var (
 	Workers = 0
-	PeerTTL = 300
+	PeerTTL = 1800
 	Peers   = sync.Map{}
 )
 
