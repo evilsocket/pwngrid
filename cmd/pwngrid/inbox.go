@@ -7,7 +7,21 @@ import (
 	"github.com/evilsocket/pwngrid/api"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"runtime"
 )
+
+func clearScreen() {
+	var what []string
+	if runtime.GOOS == "windows" {
+		what = []string{"cmd", "/c", "cls"}
+	} else {
+		what = []string{"clear", ""}
+	}
+	cmd := exec.Command(what[0], what[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
 
 func showInbox(server *api.API, box map[string]interface{}) {
 	messages := box["messages"].([]interface{})
@@ -100,7 +114,6 @@ func doInbox(server *api.API) {
 		} else {
 			log.Info("message sent")
 		}
-		os.Exit(0)
 	} else if inbox {
 		if id == 0 {
 			log.Info("fetching inbox ...")
@@ -129,6 +142,5 @@ func doInbox(server *api.API) {
 				_, _ = server.Client.MarkInboxMessage(id, "seen")
 			}
 		}
-		os.Exit(0)
 	}
 }

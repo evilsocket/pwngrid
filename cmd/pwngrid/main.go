@@ -28,6 +28,8 @@ var (
 	unread     = false
 	clear      = false
 	whoami     = false
+	loop       = false
+	loopPeriod = 30
 	receiver   = ""
 	message    = ""
 	output     = ""
@@ -61,6 +63,8 @@ func init() {
 
 	flag.BoolVar(&whoami, "whoami", whoami, "Prints the public key fingerprint and exit.")
 	flag.BoolVar(&inbox, "inbox", inbox, "Show inbox.")
+	flag.BoolVar(&loop, "loop", loop, "Keep refreshing and showing inbox.")
+	flag.IntVar(&loopPeriod, "loop-period", loopPeriod, "Period in seconds to refresh the inbox.")
 	flag.StringVar(&receiver, "send", receiver, "Receiver unit fingerprint.")
 	flag.StringVar(&message, "message", message, "Message body or file path if prefixed by @.")
 	flag.StringVar(&output, "output", output, "Write message body to this file instead of the standard output.")
@@ -133,7 +137,7 @@ func main() {
 	}
 	defer log.Close()
 
-	if receiver != "" {
+	if receiver != "" || loop == true {
 		inbox = true
 	}
 
@@ -211,7 +215,17 @@ func main() {
 	}
 
 	if keys != nil {
-		doInbox(server)
+		if loop {
+			ticker := time.NewTicker(time.Duration(loopPeriod) * time.Second)
+			doInbox(server)
+			for _ = range ticker.C {
+				clearScreen()
+				doInbox(server)
+			}
+		} else {
+			doInbox(server)
+			os.Exit(0)
+		}
 	}
 
 	server.Run(address)
