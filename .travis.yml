@@ -1,26 +1,52 @@
+sudo: false
+os: linux
 dist: bionic
-language: go
-go:
-- 1.x
+language: minimal
+
 env:
   global:
   - LANG=C
   - LC_ALL=C
-# deploy:
-#   provider: releases
-#   api_key:
-#     secure: cRewmbA8C27Nf7HflMf8NNpJQYtfcDW80un/RmUp0TSEOwHcxcbzXBgsXDhtZdrwGGlNc61y3K/3kW4As0FYFbhur4KUa1gF036corQRA6IP1wiXmd9Wcl8dkAlCo7+PQTuFyT2cQoddtA9Z9vL688KTOtKMa3qTciVJfXIkGlU3w8Ib2SZG6zpuV/a53yF1i/gXs+3oyi5Kmgxzssc1wHSOMmdZoLyLpzJWk+6lzZCYjbbnhYovUxPNakj0E+b5KVqGeOwrNNnlJbMjui+LqQ3wHyF3h6/7pmBO35m5zSDt5gel8tuv/Jnwsp7AaQvqOMbkCqGOWVvJhQ5cRSZaxqbDXPwY58NMTkZqBbh0EWWosmOApo3nUgkdjmdZgzjhHQdJRYN9F8b1MG2NrhF1TkaVKTa3HcOFxKVYIJ+v/BJL+3PDvyacMRMT6O9bvUy7vv6XO0w9Er8jZDXoYP1XusjI2gmpSl8FF8Jk/9tC/BTMs6qWbeL5aK43GhSo/Z+f0wvi2fyerv6cb4548NcM9Ls/0Frd/vgQxfI1lq4t2foB5h412fLhLzMlwCYfu+D4Q3Kdx6RBgYTOi+1BYPZd9sapXgWYh9Rp1Kmk2YXQMietycdIUYbzhqShxXpRuUGc8wNOX2tjZsAji/mN9b9CWhI2h/BTqrSO0jpwcpVfZzg=
-#   file:
-#     - pwngrid_*.zip
-#     - pwngrid_*.sha256
-#   on:
-#     tags: true
-#     repo: evilsocket/pwngrid
+  - OUTPUT="pwngrid"
+  - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
+  - TARGET_ARCH=armhf
+  - TARGET_OS=linux
+
 cache:
   apt: true
-before_script:
-- sudo apt-get -y update || true
-- sudo apt-get install -y libpcap-dev
-script:
-- make clean
-- make
+addons:
+  apt:
+    packages:
+    - wget
+    - p7zip-full
+    - libpcap-dev
+    update: true
+
+before_install:
+- wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
+- sudo dpkg -i "qemu.deb"
+
+install:
+- sudo builder/arm_builder.sh pwngrid make -e TARGET="${OUTPUT}"
+
+after_success:
+- sudo mv "build/${OUTPUT}" "${OUTPUT}"
+- file "${OUTPUT}"
+- openssl dgst -sha256 "${OUTPUT}" | tee "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+- 7z a "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+
+deploy:
+  provider: releases
+  api_key:
+    secure: cRewmbA8C27Nf7HflMf8NNpJQYtfcDW80un/RmUp0TSEOwHcxcbzXBgsXDhtZdrwGGlNc61y3K/3kW4As0FYFbhur4KUa1gF036corQRA6IP1wiXmd9Wcl8dkAlCo7+PQTuFyT2cQoddtA9Z9vL688KTOtKMa3qTciVJfXIkGlU3w8Ib2SZG6zpuV/a53yF1i/gXs+3oyi5Kmgxzssc1wHSOMmdZoLyLpzJWk+6lzZCYjbbnhYovUxPNakj0E+b5KVqGeOwrNNnlJbMjui+LqQ3wHyF3h6/7pmBO35m5zSDt5gel8tuv/Jnwsp7AaQvqOMbkCqGOWVvJhQ5cRSZaxqbDXPwY58NMTkZqBbh0EWWosmOApo3nUgkdjmdZgzjhHQdJRYN9F8b1MG2NrhF1TkaVKTa3HcOFxKVYIJ+v/BJL+3PDvyacMRMT6O9bvUy7vv6XO0w9Er8jZDXoYP1XusjI2gmpSl8FF8Jk/9tC/BTMs6qWbeL5aK43GhSo/Z+f0wvi2fyerv6cb4548NcM9Ls/0Frd/vgQxfI1lq4t2foB5h412fLhLzMlwCYfu+D4Q3Kdx6RBgYTOi+1BYPZd9sapXgWYh9Rp1Kmk2YXQMietycdIUYbzhqShxXpRuUGc8wNOX2tjZsAji/mN9b9CWhI2h/BTqrSO0jpwcpVfZzg=
+  skip_cleanup: true
+  file_glob: true
+  file:
+    - pwngrid_*.zip
+    - pwngrid_*.sha256
+  on:
+    tags: true
+    repo: evilsocket/pwngrid
+  branches:
+    only:
+    - "/^v[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9]+?$/"
