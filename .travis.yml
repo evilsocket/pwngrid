@@ -30,7 +30,7 @@ install:
 - sudo builder/arm_builder.sh pwngrid make -e TARGET="${OUTPUT}"
 
 after_success:
-- mv "build/${OUTPUT}" "${OUTPUT}"
+- sudo mv "build/${OUTPUT}" "${OUTPUT}"
 - file "${OUTPUT}"
 - openssl dgst -sha256 "${OUTPUT}" | tee "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
 - 7z a "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
