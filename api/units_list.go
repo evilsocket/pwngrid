@@ -15,7 +15,7 @@ func (api *API) ListUnits(w http.ResponseWriter, r *http.Request) {
 
 	units, total, pages := models.GetPagedUnits(page)
 
-	w.Header().Add("Cache-Control", "max-age=600")
+	w.Header().Add("Cache-Control", "public, max-age=600")
 
 	JSON(w, http.StatusOK, map[string]interface{}{
 		"records": total,
@@ -30,7 +30,7 @@ func (api *API) UnitsByCountry(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusInternalServerError, err)
 		return
 	} else {
-		w.Header().Add("Cache-Control", "max-age=600")
+		w.Header().Add("Cache-Control", "public, max-age=600")
 
 		JSON(w, http.StatusOK, results)
 	}
