@@ -12,7 +12,8 @@ func (api *API) ShowUnit(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusNotFound, ErrEmpty)
 		return
 	} else {
-		w.Header().Add("Cache-Control", "public, max-age=600")
+		w.Header().Set("Cache-Control", "max-age:600, public")
+		w.Header().Set("Expires", "600")
 		JSON(w, http.StatusOK, unit)
 	}
 }
