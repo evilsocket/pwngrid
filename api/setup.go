@@ -23,10 +23,10 @@ type API struct {
 
 func cached(seconds int, next http.HandlerFunc) http.HandlerFunc {
 	// tell nginx config to cache this
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Cache-Control", fmt.Sprintf("public, max-age=%d", seconds))
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", seconds))
 		next.ServeHTTP(w, r)
-	})
+	}
 }
 
 func (api *API) setupServerRoutes() {
