@@ -117,7 +117,7 @@ func Setup(keys *crypto.KeyPair, peer *mesh.Peer, routes bool) (err error, api *
 		Client: NewClient(keys),
 	}
 
-	api.Router.Use(CORS)
+	// api.Router.Use(CORS)
 	if api.Keys == nil {
 		api.Router.Use(middleware.DefaultCompress)
 		api.setupServerRoutes()
