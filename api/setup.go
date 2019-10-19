@@ -21,6 +21,14 @@ type API struct {
 	Client *Client
 }
 
+func cached(seconds int, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", fmt.Sprintf("public, max-age=%d", seconds))
+		w.Header().Add("Expires", fmt.Sprintf("%d", seconds))
+		next.ServeHTTP(w, r)
+	}
+}
+
 func (api *API) setupServerRoutes() {
 	log.Debug("registering server api ...")
 
@@ -29,13 +37,13 @@ func (api *API) setupServerRoutes() {
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/units", func(r chi.Router) {
 				// GET /api/v1/units/
-				r.Get("/", api.ListUnits)
+				r.Get("/", cached(600, api.ListUnits))
 				// GET /api/v1/units/by_country
-				r.Get("/by_country", api.UnitsByCountry)
+				r.Get("/by_country", cached(600, api.UnitsByCountry))
 			})
 			r.Route("/unit", func(r chi.Router) {
 				// GET /api/v1/unit/<fingerprint>
-				r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
+				r.Get("/{fingerprint:[a-fA-F0-9]+}", cached(600, api.ShowUnit))
 				r.Route("/inbox", func(r chi.Router) {
 					// GET /api/v1/unit/inbox/
 					r.Get("/", api.GetInbox)
