@@ -222,7 +222,7 @@ func main() {
 				clearScreen()
 				doInbox(server)
 			}
-		} else {
+		} else if inbox {
 			doInbox(server)
 			os.Exit(0)
 		}
