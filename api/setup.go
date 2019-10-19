@@ -21,14 +21,6 @@ type API struct {
 	Client *Client
 }
 
-func cached(seconds int, next http.HandlerFunc) http.HandlerFunc {
-	// tell nginx config to cache this
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", seconds))
-		next.ServeHTTP(w, r)
-	}
-}
-
 func (api *API) setupServerRoutes() {
 	log.Debug("registering server api ...")
 
@@ -37,14 +29,13 @@ func (api *API) setupServerRoutes() {
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/units", func(r chi.Router) {
 				// GET /api/v1/units/
-				r.Get("/", cached(15*60, api.ListUnits))
+				r.Get("/", api.ListUnits)
 				// GET /api/v1/units/by_country
-				r.Get("/by_country", cached(15*60, api.UnitsByCountry))
+				r.Get("/by_country", api.UnitsByCountry)
 			})
 			r.Route("/unit", func(r chi.Router) {
 				// GET /api/v1/unit/<fingerprint>
-				r.Get("/{fingerprint:[a-fA-F0-9]+}", cached(60, api.ShowUnit))
-
+				r.Get("/{fingerprint:[a-fA-F0-9]+}", api.ShowUnit)
 				r.Route("/inbox", func(r chi.Router) {
 					// GET /api/v1/unit/inbox/
 					r.Get("/", api.GetInbox)
