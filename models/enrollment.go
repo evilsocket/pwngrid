@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/pwngrid/crypto"
+	"regexp"
 	"strings"
 )
 
@@ -20,6 +21,14 @@ type EnrollmentRequest struct {
 	Country     string                 `json:"-"`
 }
 
+var ansi = regexp.MustCompile("\033\\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|K]")
+func clean(s string) string {
+	for _, m := range ansi.FindAllString(s, -1) {
+		s = strings.Replace(s, m, "", -1)
+	}
+	return str.Trim(s)
+}
+
 func (enroll *EnrollmentRequest) Validate() error {
 	// split the identity into name and fingerprint
 	parts := strings.Split(enroll.Identity, "@")
@@ -27,8 +36,8 @@ func (enroll *EnrollmentRequest) Validate() error {
 		return fmt.Errorf("error parsing the identity string: got %d parts", len(parts))
 	}
 
-	enroll.Name = str.Trim(parts[0])
-	enroll.Fingerprint = str.Trim(strings.ToLower(parts[1]))
+	enroll.Name = clean(parts[0])
+	enroll.Fingerprint = clean(parts[1])
 	if len(enroll.Fingerprint) != crypto.Hasher.Size()*2 {
 		return fmt.Errorf("unexpected fingerprint length for %s", enroll.Fingerprint)
 	}
