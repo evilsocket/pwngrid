@@ -9,7 +9,6 @@ func (api *API) setupPeerRoutes() {
 	log.Debug("registering peer api ...")
 
 	api.Router.Route("/api", func(r chi.Router) {
-		r.Options("/", CORSOptionHandler)
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/mesh", func(r chi.Router) {
 				// GET /api/v1/mesh/peers

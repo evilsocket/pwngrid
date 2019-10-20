@@ -27,6 +27,7 @@ func Setup(keys *crypto.KeyPair, peer *mesh.Peer) (err error, api *API) {
 	}
 
 	api.Router.Use(CORS)
+
 	if api.Keys == nil {
 		api.setupServerRoutes()
 	} else {

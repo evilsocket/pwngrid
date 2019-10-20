@@ -22,8 +22,6 @@ func (api *API) setupServerRoutes() {
 	api.Router.Use(middleware.DefaultCompress)
 
 	api.Router.Route("/api", func(r chi.Router) {
-		r.Options("/", CORSOptionHandler)
-
 		r.Route("/v1", func(r chi.Router) {
 			r.Route("/units", func(r chi.Router) {
 				// GET /api/v1/units/
@@ -52,7 +50,7 @@ func (api *API) setupServerRoutes() {
 					// POST /api/v1/unit/report/ap
 					r.Post("/ap", api.UnitReportAP)
 					// POST /api/v1/unit/report/aps
-					r.Post("/ap", api.UnitReportMultipleAP)
+					r.Post("/aps", api.UnitReportMultipleAP)
 				})
 			})
 		})
