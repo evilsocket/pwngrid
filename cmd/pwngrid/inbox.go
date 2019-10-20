@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 )
 
 func clearScreen() {
@@ -93,28 +94,34 @@ func showMessage(msg map[string]interface{}) {
 	}
 }
 
-func doInbox(server *api.API) {
+func sendMessage() {
 	var err error
 
-	if receiver != "" {
-		var raw []byte
-		if message == "" {
-			log.Fatal("-message can not be empty")
-		} else if message[0] == '@' {
-			log.Info("reading %s ...", message[1:])
-			if raw, err = ioutil.ReadFile(message[1:]); err != nil {
-				log.Fatal("error reading %s: %v", message[1:], err)
-			}
-		} else {
-			raw = []byte(message)
+	// send a message
+	var raw []byte
+	if message == "" {
+		log.Fatal("-message can not be empty")
+	} else if message[0] == '@' {
+		log.Info("reading %s ...", message[1:])
+		if raw, err = ioutil.ReadFile(message[1:]); err != nil {
+			log.Fatal("error reading %s: %v", message[1:], err)
 		}
+	} else {
+		raw = []byte(message)
+	}
 
-		if status, err := server.SendMessage(receiver, raw); err != nil {
-			log.Fatal("%d %v", status, err)
-		} else {
-			log.Info("message sent")
-		}
+	if status, err := server.SendMessage(receiver, raw); err != nil {
+		log.Fatal("%d %v", status, err)
+	} else {
+		log.Info("message sent")
+	}
+}
+
+func doInbox(server *api.API) {
+	if receiver != "" {
+		sendMessage()
 	} else if inbox {
+		// just show the inbox
 		if id == 0 {
 			log.Info("fetching inbox ...")
 			if box, err := server.Client.Inbox(page); err != nil {
@@ -142,5 +149,19 @@ func doInbox(server *api.API) {
 				_, _ = server.Client.MarkInboxMessage(id, "seen")
 			}
 		}
+	}
+}
+
+func inboxMain() {
+	if inbox {
+		doInbox(server)
+		if loop {
+			ticker := time.NewTicker(time.Duration(loopPeriod) * time.Second)
+			for _ = range ticker.C {
+				clearScreen()
+				doInbox(server)
+			}
+		}
+		os.Exit(0)
 	}
 }
