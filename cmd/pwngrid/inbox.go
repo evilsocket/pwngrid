@@ -52,9 +52,14 @@ func showInbox(server *api.API, box map[string]interface{}) {
 				var row []string
 				msg := m.(map[string]interface{})
 
+				t, err := time.Parse(time.RFC3339, msg["created_at"].(string))
+				if err != nil {
+					panic(err)
+				}
+
 				row = []string{
 					fmt.Sprintf("%d", int(msg["id"].(float64))),
-					msg["created_at"].(string),
+					t.Format("02 January 2006, 3:04 PM"),
 					fmt.Sprintf("%s@%s", msg["sender_name"], msg["sender"]),
 				}
 
@@ -82,8 +87,14 @@ func showInbox(server *api.API, box map[string]interface{}) {
 }
 
 func showMessage(msg map[string]interface{}) {
+	t, err := time.Parse(time.RFC3339, msg["created_at"].(string))
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println()
-	fmt.Printf("Message from %s@%s of the %s\n\n", msg["sender_name"], msg["sender"], msg["created_at"])
+	fmt.Printf("From: %s@%s\n", msg["sender_name"], msg["sender"])
+	fmt.Printf("Date: %s\n\n", t.Format("02 January 2006, 3:04 PM"))
 	if output == "" {
 		fmt.Printf("%s\n", msg["data"])
 		fmt.Println()
