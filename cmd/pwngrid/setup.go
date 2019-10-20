@@ -173,7 +173,7 @@ func setupMode() string {
 	}
 
 	// setup the proper routes for either server or peer mode
-	err, server = api.Setup(keys, peer, routes)
+	err, server = api.Setup(keys, peer)
 	if err != nil {
 		log.Fatal("%v", err)
 	}

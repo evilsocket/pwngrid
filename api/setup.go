@@ -1,11 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"github.com/evilsocket/pwngrid/crypto"
 	"github.com/evilsocket/pwngrid/mesh"
 	"github.com/go-chi/chi"
-	"github.com/go-chi/docgen"
 	"net/http"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -20,7 +18,7 @@ type API struct {
 	Client *Client
 }
 
-func Setup(keys *crypto.KeyPair, peer *mesh.Peer, routes bool) (err error, api *API) {
+func Setup(keys *crypto.KeyPair, peer *mesh.Peer) (err error, api *API) {
 	api = &API{
 		Router: chi.NewRouter(),
 		Keys:   keys,
@@ -33,13 +31,6 @@ func Setup(keys *crypto.KeyPair, peer *mesh.Peer, routes bool) (err error, api *
 		api.setupServerRoutes()
 	} else {
 		api.setupPeerRoutes()
-	}
-
-	if routes {
-		fmt.Println(docgen.MarkdownRoutesDoc(api.Router, docgen.MarkdownOpts{
-			ProjectPath: "github.com/evilsocket/pwngrid",
-			Intro:       "Welcome to the pwngrid API generated docs.",
-		}))
 	}
 
 	return

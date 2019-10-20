@@ -10,7 +10,6 @@ import (
 
 var (
 	debug      = false
-	routes     = false
 	ver        = false
 	wait       = false
 	inbox      = false
@@ -40,7 +39,6 @@ var (
 func init() {
 	flag.BoolVar(&ver, "version", ver, "Print version and exit.")
 	flag.BoolVar(&debug, "debug", debug, "Enable debug logs.")
-	flag.BoolVar(&routes, "routes", routes, "Generate routes documentation.")
 	flag.StringVar(&log.Output, "log", log.Output, "Log file path or empty for standard output.")
 	flag.StringVar(&address, "address", address, "API address.")
 	flag.StringVar(&env, "env", env, "Load .env from.")

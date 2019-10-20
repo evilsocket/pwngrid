@@ -51,6 +51,8 @@ func (api *API) setupServerRoutes() {
 				r.Route("/report", func(r chi.Router) {
 					// POST /api/v1/unit/report/ap
 					r.Post("/ap", api.UnitReportAP)
+					// POST /api/v1/unit/report/aps
+					r.Post("/ap", api.UnitReportMultipleAP)
 				})
 			})
 		})
