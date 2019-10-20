@@ -18,6 +18,7 @@ var (
 	unread     = false
 	clear      = false
 	whoami     = false
+	generate   = false
 	loop       = false
 	loopPeriod = 30
 	receiver   = ""
@@ -45,6 +46,7 @@ func init() {
 	flag.StringVar(&env, "env", env, "Load .env from.")
 
 	flag.StringVar(&keysPath, "keys", keysPath, "If set, will load RSA keys from this folder and start in peer mode.")
+	flag.BoolVar(&generate, "generate", generate, "Generate an RSA keypair if it doesn't exist yet.")
 	flag.BoolVar(&wait, "wait", wait, "Wait for keys to be generated.")
 	flag.IntVar(&api.ClientTimeout, "client-timeout", api.ClientTimeout, "Timeout in seconds for requests to the server when in peer mode.")
 	flag.StringVar(&api.ClientTokenFile, "client-token", api.ClientTokenFile, "File where to store the API token.")

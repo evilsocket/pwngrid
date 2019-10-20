@@ -28,8 +28,14 @@ func cleanup() {
 		if err != nil {
 			log.Fatal("%v", err)
 		}
-		pprof.WriteHeapProfile(f)
-		f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				panic(err)
+			}
+		}()
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -49,7 +55,9 @@ func setupCore() {
 		if err != nil {
 			log.Fatal("%v", err)
 		}
-		pprof.StartCPUProfile(f)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			panic(err)
+		}
 	}
 
 	if debug {
@@ -114,6 +122,22 @@ func setupMode() string {
 	// for inbox actions, set the keys to the default path if empty
 	if (whoami || inbox) && keysPath == "" {
 		keysPath = "/etc/pwnagotchi/"
+	}
+
+	// generate keypair
+	if generate {
+		if keysPath == "" {
+			log.Fatal("no -keys path specified")
+		} else if crypto.KeysExist(keysPath) {
+			log.Fatal("keypair already exists in %s", keysPath)
+		}
+
+		if _, err = crypto.LoadOrCreate(keysPath, 4096); err != nil {
+			log.Fatal("error generating RSA keypair: %v", err)
+		} else {
+			log.Info("keypair saved to %s", keysPath)
+		}
+		os.Exit(0)
 	}
 
 	mode := "server"
