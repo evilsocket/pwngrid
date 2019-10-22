@@ -28,13 +28,13 @@ func (peer *Peer) json() *jsonPeer {
 
 	// see https://www.patreon.com/posts/bonding-equation-30954153
 	var bond float64
-	e := float64(peer.Encounters / 5)
+	e := float64(peer.Encounters)
 	t := float64(time.Since(peer.PrevSeenAt).Seconds() + 1e-50) // avoid division by 0
-	bond = e / (t * 0.01)
+	bond = e / (t * 0.1)
 
-	log.Debug("bond for %s: secs_since_met=%f encounters=%d bond=%f",
+	log.Debug("bond for %s: since(PrevSeenAt)=%f encounters=%d bond=%f",
 		fingerprint,
-		time.Since(peer.MetAt).Seconds(),
+		time.Since(peer.PrevSeenAt).Seconds(),
 		peer.Encounters,
 		bond)
 
