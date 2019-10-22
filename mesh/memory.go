@@ -12,18 +12,18 @@ import (
 	"time"
 )
 
-type Storage struct {
+type Memory struct {
 	sync.Mutex
 	path  string
 	peers map[string]*jsonPeer
 }
 
-func StorageFromPath(path string) (err error, store *Storage) {
+func MemoryFromPath(path string) (err error, mem *Memory) {
 	if path, err = fs.Expand(path); err != nil {
 		return err, nil
 	}
 
-	store = &Storage{
+	mem = &Memory{
 		path:  path,
 		peers: make(map[string]*jsonPeer),
 	}
@@ -47,50 +47,50 @@ func StorageFromPath(path string) (err error, store *Storage) {
 			return err
 		}
 
-		store.peers[peer.Fingerprint] = &peer
+		mem.peers[peer.Fingerprint] = &peer
 
 		return nil
 	})
 
-	log.Debug("loaded %d known peers", len(store.peers))
+	log.Debug("loaded %d known peers", len(mem.peers))
 
 	return
 }
 
-func (store *Storage) Size() int {
-	store.Lock()
-	defer store.Unlock()
-	return len(store.peers)
+func (mem *Memory) Size() int {
+	mem.Lock()
+	defer mem.Unlock()
+	return len(mem.peers)
 }
 
-func (store *Storage) Of(fingerprint string) *jsonPeer {
-	store.Lock()
-	defer store.Unlock()
+func (mem *Memory) Of(fingerprint string) *jsonPeer {
+	mem.Lock()
+	defer mem.Unlock()
 
-	if peer, found := store.peers[fingerprint]; found {
+	if peer, found := mem.peers[fingerprint]; found {
 		return peer
 	}
 
 	return nil
 }
 
-func (store *Storage) List() []*jsonPeer {
-	store.Lock()
-	defer store.Unlock()
+func (mem *Memory) List() []*jsonPeer {
+	mem.Lock()
+	defer mem.Unlock()
 
 	list := make([]*jsonPeer, 0)
-	for _, peer := range store.peers {
+	for _, peer := range mem.peers {
 		list = append(list, peer)
 	}
 
 	return list
 }
 
-func (store *Storage) Track(fingerprint string, peer *Peer) error {
-	store.Lock()
-	defer store.Unlock()
+func (mem *Memory) Track(fingerprint string, peer *Peer) error {
+	mem.Lock()
+	defer mem.Unlock()
 
-	if encounter, found := store.peers[fingerprint]; !found {
+	if encounter, found := mem.peers[fingerprint]; !found {
 		// peer first encounter
 		peer.Encounters = 1
 		peer.MetAt = time.Now()
@@ -107,9 +107,9 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 
 	// save/update peer data in memory
 	obj := peer.json()
-	store.peers[fingerprint] = obj
+	mem.peers[fingerprint] = obj
 	// save/update peer data on disk
-	fileName := path.Join(store.path, fmt.Sprintf("%s.json", fingerprint))
+	fileName := path.Join(mem.path, fmt.Sprintf("%s.json", fingerprint))
 	if data, err := json.Marshal(obj); err != nil {
 		return err
 	} else if err := ioutil.WriteFile(fileName, data, os.ModePerm); err != nil {

@@ -43,6 +43,7 @@ func (peer *Peer) json() *jsonPeer {
 		MetAt:         peer.MetAt,
 		Encounters:    peer.Encounters,
 		Bond:          bond,
+		PrevSeenAt:    peer.PrevSeenAt,
 		DetectedAt:    peer.DetectedAt,
 		SeenAt:        peer.SeenAt,
 		Channel:       peer.Channel,

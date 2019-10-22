@@ -27,11 +27,11 @@ type Router struct {
 	mux        *PacketMuxer
 	onNewPeer  PeerActivityCallback
 	onPeerLost PeerActivityCallback
-	memory     *Storage
+	memory     *Memory
 }
 
 func StartRouting(iface string, peersPath string, local *Peer) (*Router, error) {
-	err, memory := StorageFromPath(peersPath)
+	err, memory := MemoryFromPath(peersPath)
 	if err != nil {
 		return nil, err
 	}
