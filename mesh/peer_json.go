@@ -26,9 +26,8 @@ func (peer *Peer) json() *jsonPeer {
 
 	// see https://www.patreon.com/posts/bonding-equation-30954153
 	var bond float64
-
 	t := float64(time.Since(peer.MetAt).Hours() + 1e-50) // avoid division by 0
-	e := float64(peer.Encounters / 1200.0)
+	e := float64(peer.Encounters)
 	bond = e / (t * 10.0)
 
 	doc := jsonPeer{
