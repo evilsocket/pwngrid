@@ -29,7 +29,7 @@ func (peer *Peer) json() *jsonPeer {
 	// see https://www.patreon.com/posts/bonding-equation-30954153
 	var bond float64
 	t := float64(time.Since(peer.MetAt).Seconds() + 1e-50) // avoid division by 0
-	e := float64(peer.Encounters)
+	e := float64(peer.Encounters / 5)
 	bond = e / t
 
 	log.Debug("bond for %s: secs_since_met=%f encounters=%d bond=%f",
