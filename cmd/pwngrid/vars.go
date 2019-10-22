@@ -29,6 +29,7 @@ var (
 	env        = ".env"
 	iface      = "mon0"
 	keysPath   = ""
+	peersPath  = "/root/peers"
 	keys       = (*crypto.KeyPair)(nil)
 	peer       = (*mesh.Peer)(nil)
 	server     = (*api.API)(nil)
@@ -50,6 +51,7 @@ func init() {
 	flag.StringVar(&api.ClientTokenFile, "client-token", api.ClientTokenFile, "File where to store the API token.")
 
 	flag.StringVar(&iface, "iface", iface, "Monitor interface to use for mesh advertising.")
+	flag.StringVar(&peersPath, "peers", peersPath, "path to save historical information of met peers.")
 	flag.IntVar(&mesh.SignalingPeriod, "signaling-period", mesh.SignalingPeriod, "Period in milliseconds for mesh signaling frames.")
 
 	flag.BoolVar(&whoami, "whoami", whoami, "Prints the public key fingerprint and exit.")
