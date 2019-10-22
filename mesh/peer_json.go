@@ -2,6 +2,7 @@ package mesh
 
 import (
 	"encoding/json"
+	"github.com/evilsocket/islazy/log"
 	"time"
 )
 
@@ -29,6 +30,12 @@ func (peer *Peer) json() *jsonPeer {
 	t := float64(time.Since(peer.MetAt).Hours() + 1e-50) // avoid division by 0
 	e := float64(peer.Encounters)
 	bond = e / (t * 10.0)
+
+	log.Debug("bond for %s: hours_since_met=%f encounters=%d bond=%f",
+		fingerprint,
+		time.Since(peer.MetAt).Hours(),
+		peer.Encounters,
+		bond)
 
 	doc := jsonPeer{
 		Fingerprint:   fingerprint,
