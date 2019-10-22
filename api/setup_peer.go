@@ -14,7 +14,7 @@ func (api *API) setupPeerRoutes() {
 				// GET /api/v1/mesh/peers
 				r.Get("/peers", api.PeerGetPeers)
 				// GET /api/v1/mesh/memory
-				r.Get("/peers", api.PeerGetMemory)
+				r.Get("/memory", api.PeerGetMemory)
 
 				// GET /api/v1/mesh/<status>
 				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)
