@@ -63,6 +63,17 @@ func (store *Storage) Size() int {
 	return len(store.peers)
 }
 
+func (store *Storage) Of(fingerprint string) *jsonPeer {
+	store.Lock()
+	defer store.Unlock()
+
+	if peer, found := store.peers[fingerprint]; found {
+		return peer
+	}
+
+	return nil
+}
+
 func (store *Storage) List() []*jsonPeer {
 	store.Lock()
 	defer store.Unlock()

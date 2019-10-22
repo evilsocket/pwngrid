@@ -63,6 +63,10 @@ func (router *Router) Memory() []*jsonPeer {
 	return router.memory.List()
 }
 
+func (router *Router) MemoryOf(fingerprint string) *jsonPeer {
+	return router.memory.Of(fingerprint)
+}
+
 func (router *Router) OnNewPeer(cb PeerActivityCallback) {
 	router.onNewPeer = cb
 }
