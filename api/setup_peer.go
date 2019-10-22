@@ -21,7 +21,6 @@ func (api *API) setupPeerRoutes() {
 					r.Get("/{fingerprint:[a-fA-F0-9]+}", api.PeerGetMemoryOf)
 				})
 
-
 				// GET /api/v1/mesh/<status>
 				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)
 
