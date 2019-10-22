@@ -94,7 +94,6 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 		// peer first encounter
 		peer.Encounters = 1
 		peer.MetAt = time.Now()
-		store.peers[fingerprint] = peer.json()
 	} else {
 		// we met this peer before
 		encounter.Encounters++
@@ -102,9 +101,12 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 		peer.Encounters = encounter.Encounters
 	}
 
+	// save/update peer data in memory
+	obj := peer.json()
+	store.peers[fingerprint] = obj
 	// save/update peer data on disk
 	fileName := path.Join(store.path, fmt.Sprintf("%s.json", fingerprint))
-	if data, err := json.Marshal(peer); err != nil {
+	if data, err := json.Marshal(obj); err != nil {
 		return err
 	} else if err := ioutil.WriteFile(fileName, data, os.ModePerm); err != nil {
 		return err

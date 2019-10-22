@@ -9,6 +9,7 @@ type jsonPeer struct {
 	Fingerprint   string                 `json:"fingerprint"`
 	MetAt         time.Time              `json:"met_at"`
 	Encounters    int                    `json:"encounters"`
+	Bond          float64                `json:"bond"`
 	DetectedAt    time.Time              `json:"detected_at"`
 	SeenAt        time.Time              `json:"seen_at"`
 	Channel       int                    `json:"channel"`
@@ -23,10 +24,16 @@ func (peer *Peer) json() *jsonPeer {
 		fingerprint = v.(string)
 	}
 
+	// see https://www.patreon.com/posts/bonding-equation-30954153
+	t := time.Since(peer.MetAt).Hours() / 24.0
+	e := float64(peer.Encounters / 50.0)
+	bond := e / (t * 10.0)
+
 	doc := jsonPeer{
 		Fingerprint:   fingerprint,
 		MetAt:         peer.MetAt,
 		Encounters:    peer.Encounters,
+		Bond:          bond,
 		DetectedAt:    peer.DetectedAt,
 		SeenAt:        peer.SeenAt,
 		Channel:       peer.Channel,
