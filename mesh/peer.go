@@ -14,11 +14,14 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"regexp"
 	"time"
 )
 
 var (
 	SignalingPeriod = 300
+
+	fingValidator = regexp.MustCompile("^[a-fA-F0-9]{64}$")
 )
 
 type SessionID []byte
@@ -26,6 +29,8 @@ type SessionID []byte
 type Peer struct {
 	sync.Mutex
 
+	MetAt        time.Time
+	Encounters   int
 	DetectedAt   time.Time
 	SeenAt       time.Time
 	Channel      int
@@ -42,6 +47,9 @@ type Peer struct {
 }
 
 type jsonPeer struct {
+	Fingerprint   string                 `json:"fingerprint"`
+	MetAt         time.Time              `json:"met_at"`
+	Encounters    int                    `json:"encounters"`
 	DetectedAt    time.Time              `json:"detected_at"`
 	SeenAt        time.Time              `json:"seen_at"`
 	Channel       int                    `json:"channel"`
@@ -121,6 +129,8 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 	fingerprint, found := adv["identity"].(string)
 	if !found {
 		return nil, fmt.Errorf("peer %x is not advertising any identity", peer.SessionID)
+	} else if !fingValidator.MatchString(fingerprint) {
+		return nil, fmt.Errorf("peer %x is advertising an invalid fingerprint: %s", peer.SessionID, fingerprint)
 	}
 
 	if pubKey64, found := adv["public_key"]; found {
@@ -170,7 +180,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
 			return nil, fmt.Errorf("peer %x signature is invalid", peer.SessionID)
 		}
-	 */
+	*/
 
 	for key, value := range adv {
 		peer.AdvData.Store(key, value)
@@ -183,7 +193,15 @@ func (peer *Peer) MarshalJSON() ([]byte, error) {
 	peer.Lock()
 	defer peer.Unlock()
 
+	fingerprint := ""
+	if v, found := peer.AdvData.Load("identity"); found {
+		fingerprint = v.(string)
+	}
+
 	doc := jsonPeer{
+		Fingerprint:   fingerprint,
+		MetAt:         peer.MetAt,
+		Encounters:    peer.Encounters,
 		DetectedAt:    peer.DetectedAt,
 		SeenAt:        peer.SeenAt,
 		Channel:       peer.Channel,
@@ -241,7 +259,7 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
 			return fmt.Errorf("peer %x signature is invalid", peer.SessionID)
 		}
-	 */
+	*/
 
 	peer.Channel = wifi.Freq2Chan(int(radio.ChannelFrequency))
 	peer.RSSI = int(radio.DBMAntennaSignal)
