@@ -15,14 +15,16 @@ type API struct {
 	Router *chi.Mux
 	Keys   *crypto.KeyPair
 	Peer   *mesh.Peer
+	Mesh   *mesh.Router
 	Client *Client
 }
 
-func Setup(keys *crypto.KeyPair, peer *mesh.Peer) (err error, api *API) {
+func Setup(keys *crypto.KeyPair, peer *mesh.Peer, router *mesh.Router) (err error, api *API) {
 	api = &API{
 		Router: chi.NewRouter(),
 		Keys:   keys,
 		Peer:   peer,
+		Mesh:   router,
 		Client: NewClient(keys),
 	}
 

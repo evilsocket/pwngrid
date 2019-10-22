@@ -59,6 +59,10 @@ func StartRouting(iface string, peersPath string, local *Peer) (*Router, error) 
 	return router, nil
 }
 
+func (router *Router) Memory() []*jsonPeer {
+	return router.memory.List()
+}
+
 func (router *Router) OnNewPeer(cb PeerActivityCallback) {
 	router.onNewPeer = cb
 }

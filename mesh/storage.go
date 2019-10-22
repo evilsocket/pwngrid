@@ -63,6 +63,18 @@ func (store *Storage) Size() int {
 	return len(store.peers)
 }
 
+func (store *Storage) List() []*jsonPeer {
+	store.Lock()
+	defer store.Unlock()
+
+	list := make([]*jsonPeer, 0)
+	for _, peer := range store.peers {
+		list = append(list, peer)
+	}
+
+	return list
+}
+
 func (store *Storage) Track(fingerprint string, peer *Peer) error {
 	store.Lock()
 	defer store.Unlock()

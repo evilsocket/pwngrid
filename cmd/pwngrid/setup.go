@@ -89,7 +89,7 @@ func setupMesh() {
 	if err = peer.StartAdvertising(iface); err != nil {
 		log.Fatal("error while starting signaling: %v", err)
 	}
-	if router, err := mesh.StartRouting(iface, peersPath, peer); err != nil {
+	if router, err = mesh.StartRouting(iface, peersPath, peer); err != nil {
 		log.Fatal("%v", err)
 	} else {
 		router.OnNewPeer(func(ident string, peer *mesh.Peer) {
@@ -173,7 +173,7 @@ func setupMode() string {
 	}
 
 	// setup the proper routes for either server or peer mode
-	err, server = api.Setup(keys, peer)
+	err, server = api.Setup(keys, peer, router)
 	if err != nil {
 		log.Fatal("%v", err)
 	}

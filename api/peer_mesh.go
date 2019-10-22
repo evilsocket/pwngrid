@@ -10,7 +10,7 @@ import (
 	"sort"
 )
 
-// GET /api/v1/mesh/<status>
+// GET /api/v1/mesh/peers
 func (api *API) PeerGetPeers(w http.ResponseWriter, r *http.Request) {
 	peers := make([]*mesh.Peer, 0)
 	mesh.Peers.Range(func(key, value interface{}) bool {
@@ -23,6 +23,16 @@ func (api *API) PeerGetPeers(w http.ResponseWriter, r *http.Request) {
 		return peers[i].RSSI > peers[j].RSSI
 	})
 
+	JSON(w, http.StatusOK, peers)
+}
+
+// GET /api/v1/mesh/memory
+func (api *API) PeerGetMemory(w http.ResponseWriter, r *http.Request) {
+	peers := api.Mesh.Memory()
+	// more interactions first
+	sort.Slice(peers, func(i, j int) bool {
+		return peers[i].Encounters > peers[j].Encounters
+	})
 	JSON(w, http.StatusOK, peers)
 }
 

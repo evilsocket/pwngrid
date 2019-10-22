@@ -13,6 +13,8 @@ func (api *API) setupPeerRoutes() {
 			r.Route("/mesh", func(r chi.Router) {
 				// GET /api/v1/mesh/peers
 				r.Get("/peers", api.PeerGetPeers)
+				// GET /api/v1/mesh/memory
+				r.Get("/peers", api.PeerGetMemory)
 
 				// GET /api/v1/mesh/<status>
 				r.Get("/{status:[a-z]+}", api.PeerSetSignaling)

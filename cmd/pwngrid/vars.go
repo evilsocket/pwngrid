@@ -31,6 +31,7 @@ var (
 	keysPath   = ""
 	peersPath  = "/root/peers"
 	keys       = (*crypto.KeyPair)(nil)
+	router     = (*mesh.Router)(nil)
 	peer       = (*mesh.Peer)(nil)
 	server     = (*api.API)(nil)
 	cpuProfile = ""
