@@ -14,7 +14,7 @@ func (api *API) setupPeerRoutes() {
 				// GET /api/v1/mesh/peers
 				r.Get("/peers", api.PeerGetPeers)
 
-				r.Route("/report", func(r chi.Router) {
+				r.Route("/memory", func(r chi.Router) {
 					// GET /api/v1/mesh/memory
 					r.Get("/", api.PeerGetMemory)
 					// GET /api/v1/mesh/memory/<fingerprint>
