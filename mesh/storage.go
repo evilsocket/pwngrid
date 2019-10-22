@@ -94,9 +94,11 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 		// peer first encounter
 		peer.Encounters = 1
 		peer.MetAt = time.Now()
+		peer.PrevSeenAt = peer.SeenAt
 	} else {
 		// we met this peer before
 		encounter.Encounters++
+		peer.PrevSeenAt = encounter.SeenAt
 		peer.MetAt = encounter.MetAt
 		peer.Encounters = encounter.Encounters
 	}
