@@ -12,9 +12,9 @@ import (
 	"github.com/evilsocket/pwngrid/wifi"
 	"github.com/google/gopacket/layers"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
-	"regexp"
 	"time"
 )
 
@@ -29,10 +29,10 @@ type SessionID []byte
 type Peer struct {
 	sync.Mutex
 
-	MetAt        time.Time
+	MetAt        time.Time // first time met
+	DetectedAt   time.Time // first time detected on this session
+	SeenAt       time.Time // last time detected on this session
 	Encounters   int
-	DetectedAt   time.Time
-	SeenAt       time.Time
 	Channel      int
 	RSSI         int
 	SessionID    SessionID
@@ -177,7 +177,6 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 	return peer, nil
 }
 
-
 func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[string]interface{}) (err error) {
 	peer.Lock()
 	defer peer.Unlock()
@@ -225,6 +224,7 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 
 	peer.Channel = wifi.Freq2Chan(int(radio.ChannelFrequency))
 	peer.RSSI = int(radio.DBMAntennaSignal)
+	peer.SeenAt = time.Now()
 
 	if !bytes.Equal(peer.SessionID, dot11.Address3) {
 		log.Info("peer %s changed session id: %x -> %x", peer.ID(), peer.SessionIDStr, dot11.Address3)
