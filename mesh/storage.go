@@ -83,6 +83,7 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 		// peer first encounter
 		peer.Encounters = 1
 		peer.MetAt = time.Now()
+		store.peers[fingerprint] = peer.json()
 	} else {
 		// we met this peer before
 		encounter.Encounters++

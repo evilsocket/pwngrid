@@ -17,10 +17,7 @@ type jsonPeer struct {
 	Advertisement map[string]interface{} `json:"advertisement"`
 }
 
-func (peer *Peer) MarshalJSON() ([]byte, error) {
-	peer.Lock()
-	defer peer.Unlock()
-
+func (peer *Peer) json() *jsonPeer {
 	fingerprint := ""
 	if v, found := peer.AdvData.Load("identity"); found {
 		fingerprint = v.(string)
@@ -41,5 +38,12 @@ func (peer *Peer) MarshalJSON() ([]byte, error) {
 		doc.Advertisement[key.(string)] = value
 		return true
 	})
-	return json.Marshal(doc)
+
+	return &doc
+}
+
+func (peer *Peer) MarshalJSON() ([]byte, error) {
+	peer.Lock()
+	defer peer.Unlock()
+	return json.Marshal(peer.json())
 }
