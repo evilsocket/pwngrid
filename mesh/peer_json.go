@@ -32,9 +32,9 @@ func (peer *Peer) json() *jsonPeer {
 	e := float64(peer.Encounters)
 	bond = e / t
 
-	log.Debug("bond for %s: hours_since_met=%f encounters=%d bond=%f",
+	log.Debug("bond for %s: secs_since_met=%f encounters=%d bond=%f",
 		fingerprint,
-		time.Since(peer.MetAt).Hours(),
+		time.Since(peer.MetAt).Seconds(),
 		peer.Encounters,
 		bond)
 
