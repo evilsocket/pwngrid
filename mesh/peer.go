@@ -52,6 +52,7 @@ func MakeLocalPeer(name string, keys *crypto.KeyPair) *Peer {
 	peer := &Peer{
 		DetectedAt: now,
 		SeenAt:     now,
+		PrevSeenAt: now,
 		SessionID:  make([]byte, 6),
 		Keys:       keys,
 		AdvData:    sync.Map{},
@@ -102,6 +103,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 	peer = &Peer{
 		DetectedAt: now,
 		SeenAt:     now,
+		PrevSeenAt: now,
 		Channel:    wifi.Freq2Chan(int(radiotap.ChannelFrequency)),
 		RSSI:       int(radiotap.DBMAntennaSignal),
 		SessionID:  SessionID(dot11.Address3),
@@ -225,7 +227,6 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 
 	peer.Channel = wifi.Freq2Chan(int(radio.ChannelFrequency))
 	peer.RSSI = int(radio.DBMAntennaSignal)
-	peer.SeenAt = time.Now()
 
 	if !bytes.Equal(peer.SessionID, dot11.Address3) {
 		log.Info("peer %s changed session id: %x -> %x", peer.ID(), peer.SessionIDStr, dot11.Address3)

@@ -103,9 +103,6 @@ func (router *Router) peersPruner() {
 
 func (router *Router) newPeer(ident string, peer *Peer) {
 	Peers.Store(ident, peer)
-	if err := router.memory.Track(ident, peer); err != nil {
-		log.Error("error saving peer encounter for %s: %v", ident, err)
-	}
 	router.onNewPeer(ident, peer)
 }
 
@@ -128,17 +125,27 @@ func (router *Router) onPeerAdvertisement(pkt gopacket.Packet, radio *layers.Rad
 		return
 	}
 
-	if _peer, existing := Peers.Load(ident); existing {
-		peer := _peer.(*Peer)
+	var peer *Peer
+
+	_peer, existing := Peers.Load(ident)
+	if existing {
+		peer = _peer.(*Peer)
 		if err := peer.Update(radio, dot11, advData); err != nil {
 			log.Warning("error updating peer %s: %v", peer.ID(), err)
+		} else if err := router.memory.Track(ident.(string), peer); err != nil {
+			log.Error("error saving peer encounter for %s: %v", ident, err)
 		}
-	} else if peer, err := NewPeer(radio, dot11, advData); err != nil {
-		log.Debug("error creating peer: %v", err)
-		return
 	} else {
-		router.newPeer(ident.(string), peer)
+		if peer, err = NewPeer(radio, dot11, advData); err != nil {
+			log.Debug("error creating peer: %v", err)
+			return
+		} else if err := router.memory.Track(ident.(string), peer); err != nil {
+			log.Error("error saving peer encounter for %s: %v", ident, err)
+		} else {
+			router.newPeer(ident.(string), peer)
+		}
 	}
+
 }
 
 func (router *Router) onPacket(pkt gopacket.Packet) {

@@ -103,6 +103,8 @@ func (store *Storage) Track(fingerprint string, peer *Peer) error {
 		peer.Encounters = encounter.Encounters
 	}
 
+	peer.SeenAt = time.Now()
+
 	// save/update peer data in memory
 	obj := peer.json()
 	store.peers[fingerprint] = obj
