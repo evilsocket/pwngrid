@@ -15,7 +15,6 @@ type jsonPeer struct {
 	SeenAt        time.Time              `json:"seen_at"`
 	PrevSeenAt    time.Time              `json:"prev_seen_at"`
 	Encounters    int                    `json:"encounters"`
-	Bond          float64                `json:"bond"`
 	Channel       int                    `json:"channel"`
 	RSSI          int                    `json:"rssi"`
 	SessionID     string                 `json:"session_id"`
@@ -59,7 +58,6 @@ func (peer *Peer) json() *jsonPeer {
 		Fingerprint:   fingerprint,
 		MetAt:         peer.MetAt,
 		Encounters:    peer.Encounters,
-		Bond:          peer.Bond(),
 		PrevSeenAt:    peer.PrevSeenAt,
 		DetectedAt:    peer.DetectedAt,
 		SeenAt:        peer.SeenAt,
