@@ -59,11 +59,11 @@ func StartRouting(iface string, peersPath string, local *Peer) (*Router, error) 
 	return router, nil
 }
 
-func (router *Router) Memory() []*jsonPeer {
+func (router *Router) Memory() []*Peer {
 	return router.memory.List()
 }
 
-func (router *Router) MemoryOf(fingerprint string) *jsonPeer {
+func (router *Router) MemoryOf(fingerprint string) *Peer {
 	return router.memory.Of(fingerprint)
 }
 

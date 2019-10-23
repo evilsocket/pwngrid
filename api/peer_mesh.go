@@ -31,10 +31,12 @@ func (api *API) PeerGetMemory(w http.ResponseWriter, r *http.Request) {
 	peers := api.Mesh.Memory()
 	// higher bond first
 	sort.Slice(peers, func(i, j int) bool {
-		if peers[i].Bond == peers[j].Bond {
+		a := peers[i].Bond()
+		b := peers[j].Bond()
+		if a == b {
 			return peers[i].Encounters > peers[j].Encounters
 		}
-		return peers[i].Bond > peers[j].Bond
+		return a > b
 	})
 	JSON(w, http.StatusOK, peers)
 }
@@ -49,7 +51,6 @@ func (api *API) PeerGetMemoryOf(w http.ResponseWriter, r *http.Request) {
 	}
 	JSON(w, http.StatusOK, peer)
 }
-
 
 // GET /api/v1/mesh/<status>
 func (api *API) PeerSetSignaling(w http.ResponseWriter, r *http.Request) {

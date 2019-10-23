@@ -15,7 +15,7 @@ import (
 type Memory struct {
 	sync.Mutex
 	path  string
-	peers map[string]*jsonPeer
+	peers map[string]*Peer
 }
 
 func MemoryFromPath(path string) (err error, mem *Memory) {
@@ -25,7 +25,7 @@ func MemoryFromPath(path string) (err error, mem *Memory) {
 
 	mem = &Memory{
 		path:  path,
-		peers: make(map[string]*jsonPeer),
+		peers: make(map[string]*Peer),
 	}
 
 	if !fs.Exists(path) {
@@ -47,7 +47,7 @@ func MemoryFromPath(path string) (err error, mem *Memory) {
 			return err
 		}
 
-		mem.peers[peer.Fingerprint] = &peer
+		mem.peers[peer.Fingerprint] = peerFromJSON(peer)
 
 		return nil
 	})
@@ -63,7 +63,7 @@ func (mem *Memory) Size() int {
 	return len(mem.peers)
 }
 
-func (mem *Memory) Of(fingerprint string) *jsonPeer {
+func (mem *Memory) Of(fingerprint string) *Peer {
 	mem.Lock()
 	defer mem.Unlock()
 
@@ -74,11 +74,11 @@ func (mem *Memory) Of(fingerprint string) *jsonPeer {
 	return nil
 }
 
-func (mem *Memory) List() []*jsonPeer {
+func (mem *Memory) List() []*Peer {
 	mem.Lock()
 	defer mem.Unlock()
 
-	list := make([]*jsonPeer, 0)
+	list := make([]*Peer, 0)
 	for _, peer := range mem.peers {
 		list = append(list, peer)
 	}
@@ -106,11 +106,10 @@ func (mem *Memory) Track(fingerprint string, peer *Peer) error {
 	peer.SeenAt = time.Now()
 
 	// save/update peer data in memory
-	obj := peer.json()
-	mem.peers[fingerprint] = obj
+	mem.peers[fingerprint] = peer
 	// save/update peer data on disk
 	fileName := path.Join(mem.path, fmt.Sprintf("%s.json", fingerprint))
-	if data, err := json.Marshal(obj); err != nil {
+	if data, err := json.Marshal(peer); err != nil {
 		return err
 	} else if err := ioutil.WriteFile(fileName, data, os.ModePerm); err != nil {
 		return err

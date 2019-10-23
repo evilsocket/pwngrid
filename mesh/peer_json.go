@@ -3,6 +3,8 @@ package mesh
 import (
 	"encoding/json"
 	"github.com/evilsocket/islazy/log"
+	"net"
+	"sync"
 	"time"
 )
 
@@ -20,29 +22,44 @@ type jsonPeer struct {
 	Advertisement map[string]interface{} `json:"advertisement"`
 }
 
+// creates a Peer object filled with the fields of the JSON representation
+func peerFromJSON(j jsonPeer) *Peer {
+	peer := &Peer{
+		DetectedAt:   j.DetectedAt,
+		SeenAt:       j.SeenAt,
+		PrevSeenAt:   j.PrevSeenAt,
+		SessionIDStr: j.SessionID,
+		Encounters:   j.Encounters,
+		Channel:      j.Channel,
+		RSSI:         j.RSSI,
+		AdvData:      sync.Map{},
+	}
+
+	if hw, err := net.ParseMAC(j.SessionID); err == nil {
+		copy(peer.SessionID, hw)
+	} else {
+		log.Warning("error parsing peer session id %s: %v", j.SessionID, err)
+	}
+
+	for key, val := range j.Advertisement {
+		peer.AdvData.Store(key, val)
+	}
+
+	return peer
+}
+
+// converts a peer into a JSON friendly representation
 func (peer *Peer) json() *jsonPeer {
 	fingerprint := ""
 	if v, found := peer.AdvData.Load("identity"); found {
 		fingerprint = v.(string)
 	}
 
-	// see https://www.patreon.com/posts/bonding-equation-30954153
-	var bond float64
-	e := float64(peer.Encounters)
-	t := float64(time.Since(peer.PrevSeenAt).Seconds() + 1e-50) // avoid division by 0
-	bond = e / (t * 0.1)
-
-	log.Debug("bond for %s: since(PrevSeenAt)=%f encounters=%d bond=%f",
-		fingerprint,
-		time.Since(peer.PrevSeenAt).Seconds(),
-		peer.Encounters,
-		bond)
-
 	doc := jsonPeer{
 		Fingerprint:   fingerprint,
 		MetAt:         peer.MetAt,
 		Encounters:    peer.Encounters,
-		Bond:          bond,
+		Bond:          peer.Bond(),
 		PrevSeenAt:    peer.PrevSeenAt,
 		DetectedAt:    peer.DetectedAt,
 		SeenAt:        peer.SeenAt,
