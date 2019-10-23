@@ -6,6 +6,7 @@ import (
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"io/ioutil"
+	"math"
 	"os"
 	"path"
 	"sync"
@@ -97,7 +98,9 @@ func (mem *Memory) Track(fingerprint string, peer *Peer) error {
 		peer.PrevSeenAt = peer.SeenAt
 	} else {
 		// we met this peer before
-		encounter.Encounters++
+		if encounter.Encounters < math.MaxUint64 {
+			encounter.Encounters++
+		}
 		peer.PrevSeenAt = encounter.SeenAt
 		peer.MetAt = encounter.MetAt
 		peer.Encounters = encounter.Encounters

@@ -33,7 +33,7 @@ type Peer struct {
 	DetectedAt   time.Time // first time detected on this session
 	SeenAt       time.Time // last time detected on this session
 	PrevSeenAt   time.Time // if we met this unit before, this is the last time it's been seen
-	Encounters   int
+	Encounters   uint64
 	Channel      int
 	RSSI         int
 	SessionID    SessionID

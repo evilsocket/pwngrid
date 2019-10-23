@@ -14,7 +14,7 @@ type jsonPeer struct {
 	DetectedAt    time.Time              `json:"detected_at"`
 	SeenAt        time.Time              `json:"seen_at"`
 	PrevSeenAt    time.Time              `json:"prev_seen_at"`
-	Encounters    int                    `json:"encounters"`
+	Encounters    uint64                 `json:"encounters"`
 	Channel       int                    `json:"channel"`
 	RSSI          int                    `json:"rssi"`
 	SessionID     string                 `json:"session_id"`
