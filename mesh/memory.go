@@ -40,16 +40,17 @@ func MemoryFromPath(path string) (err error, mem *Memory) {
 		log.Debug("loading %s ...", fileName)
 		data, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			return err
+			log.Error("error loading %s: %v", fileName, err)
+			return nil
 		}
 
 		var peer jsonPeer
 		if err = json.Unmarshal(data, &peer); err != nil {
-			return err
+			log.Error("error loading %s: %v", fileName, err)
+			return nil
 		}
 
 		mem.peers[peer.Fingerprint] = peerFromJSON(peer)
-
 		return nil
 	})
 
