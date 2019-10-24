@@ -1,7 +1,9 @@
 sudo: false
 os: linux
 dist: bionic
-language: minimal
+language: go
+go:
+- 1.13.x
 
 env:
   global:
@@ -9,8 +11,6 @@ env:
   - LC_ALL=C
   - OUTPUT="pwngrid"
   - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
-  - TARGET_ARCH=armhf
-  - TARGET_OS=linux
 
 cache:
   apt: true
@@ -22,18 +22,62 @@ addons:
     - libpcap-dev
     update: true
 
-before_install:
-- wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
-- sudo dpkg -i "qemu.deb"
+cross: &cross
+  before_install:
+  - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
+  - sudo dpkg -i "qemu.deb"
+  install:
+  - sudo builder/arm_builder.sh pwngrid make -e TARGET="${OUTPUT}"
 
-install:
-- sudo builder/arm_builder.sh pwngrid make -e TARGET="${OUTPUT}"
+normal: &normal
+  install:
+  - make -e TARGET="${OUTPUT}"
 
-after_success:
-- sudo mv "build/${OUTPUT}" "${OUTPUT}"
-- file "${OUTPUT}"
-- openssl dgst -sha256 "${OUTPUT}" | tee "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
-- 7z a "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+end: &end
+  after_success:
+  - sudo mv "build/${OUTPUT}" "${OUTPUT}"
+  - file "${OUTPUT}"
+  - openssl dgst -sha256 "${OUTPUT}" | tee "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+  - 7z a "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "${OUTPUT}_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+
+matrix:
+  include:
+  - name: Linux - amd64
+    if: tag IS present
+    arch: amd64
+    env:
+    - TARGET_OS=linux
+    - TARGET_ARCH=amd64
+    <<: *normal
+    <<: *end
+  - name: Linux - aarch64
+    if: tag IS present
+    arch: arm64
+    env:
+    - TARGET_OS=linux
+    - TARGET_ARCH=aarch64
+    <<: *normal
+    <<: *end
+  - name: Linux - armhf
+    if: tag IS present
+    arch: amd64
+    language: minimal
+    env:
+    - TARGET_OS=linux
+    - TARGET_ARCH=armhf
+    <<: *cross
+    <<: *end
+    # Tests
+    #  - name: Linux - tests
+    #    if: tag IS blank
+    #    os: linux
+    #    arch: amd64
+    #    install:
+    #      - make deps
+    #    script:
+    #      - make test
+    #    after_success:
+    #      - bash <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: releases
