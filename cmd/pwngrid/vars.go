@@ -19,6 +19,7 @@ var (
 	whoami     = false
 	generate   = false
 	loop       = false
+	nodb       = false
 	loopPeriod = 30
 	receiver   = ""
 	message    = ""
@@ -41,6 +42,7 @@ var (
 func init() {
 	flag.BoolVar(&ver, "version", ver, "Print version and exit.")
 	flag.BoolVar(&debug, "debug", debug, "Enable debug logs.")
+	flag.BoolVar(&nodb, "no-db", debug, "Don't fail if database connection can't be enstablished.")
 	flag.StringVar(&log.Output, "log", log.Output, "Log file path or empty for standard output.")
 	flag.StringVar(&address, "address", address, "API address.")
 	flag.StringVar(&env, "env", env, "Load .env from.")

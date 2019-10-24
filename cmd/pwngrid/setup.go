@@ -107,7 +107,11 @@ func setupDB() {
 		log.Fatal("%v", err)
 	}
 	if err := models.Setup(); err != nil {
-		log.Fatal("%v", err)
+		if nodb {
+			log.Warning("%v", err)
+		} else {
+			log.Fatal("%v", err)
+		}
 	}
 }
 
