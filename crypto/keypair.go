@@ -76,6 +76,10 @@ func Load(keysPath string) (pair *KeyPair, err error) {
 	return pair, pair.Load()
 }
 
+func KeysExist(keysPath string) bool {
+	return fs.Exists(keysPath) && fs.Exists(PrivatePath(keysPath))
+}
+
 func LoadOrCreate(keysPath string, bits int) (pair *KeyPair, err error) {
 	privFile := PrivatePath(keysPath)
 	pair = &KeyPair{

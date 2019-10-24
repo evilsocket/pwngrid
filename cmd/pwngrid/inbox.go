@@ -7,7 +7,22 @@ import (
 	"github.com/evilsocket/pwngrid/api"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"runtime"
+	"time"
 )
+
+func clearScreen() {
+	var what []string
+	if runtime.GOOS == "windows" {
+		what = []string{"cmd", "/c", "cls"}
+	} else {
+		what = []string{"clear", ""}
+	}
+	cmd := exec.Command(what[0], what[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
 
 func showInbox(server *api.API, box map[string]interface{}) {
 	messages := box["messages"].([]interface{})
@@ -37,9 +52,14 @@ func showInbox(server *api.API, box map[string]interface{}) {
 				var row []string
 				msg := m.(map[string]interface{})
 
+				t, err := time.Parse(time.RFC3339, msg["created_at"].(string))
+				if err != nil {
+					panic(err)
+				}
+
 				row = []string{
 					fmt.Sprintf("%d", int(msg["id"].(float64))),
-					msg["created_at"].(string),
+					t.Format("02 January 2006, 3:04 PM"),
 					fmt.Sprintf("%s@%s", msg["sender_name"], msg["sender"]),
 				}
 
@@ -67,8 +87,14 @@ func showInbox(server *api.API, box map[string]interface{}) {
 }
 
 func showMessage(msg map[string]interface{}) {
+	t, err := time.Parse(time.RFC3339, msg["created_at"].(string))
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println()
-	fmt.Printf("Message from %s@%s of the %s\n\n", msg["sender_name"], msg["sender"], msg["created_at"])
+	fmt.Printf("From: %s@%s\n", msg["sender_name"], msg["sender"])
+	fmt.Printf("Date: %s\n\n", t.Format("02 January 2006, 3:04 PM"))
 	if output == "" {
 		fmt.Printf("%s\n", msg["data"])
 		fmt.Println()
@@ -79,29 +105,34 @@ func showMessage(msg map[string]interface{}) {
 	}
 }
 
-func doInbox(server *api.API) {
+func sendMessage() {
 	var err error
 
-	if receiver != "" {
-		var raw []byte
-		if message == "" {
-			log.Fatal("-message can not be empty")
-		} else if message[0] == '@' {
-			log.Info("reading %s ...", message[1:])
-			if raw, err = ioutil.ReadFile(message[1:]); err != nil {
-				log.Fatal("error reading %s: %v", message[1:], err)
-			}
-		} else {
-			raw = []byte(message)
+	// send a message
+	var raw []byte
+	if message == "" {
+		log.Fatal("-message can not be empty")
+	} else if message[0] == '@' {
+		log.Info("reading %s ...", message[1:])
+		if raw, err = ioutil.ReadFile(message[1:]); err != nil {
+			log.Fatal("error reading %s: %v", message[1:], err)
 		}
+	} else {
+		raw = []byte(message)
+	}
 
-		if status, err := server.SendMessage(receiver, raw); err != nil {
-			log.Fatal("%d %v", status, err)
-		} else {
-			log.Info("message sent")
-		}
-		os.Exit(0)
+	if status, err := server.SendMessage(receiver, raw); err != nil {
+		log.Fatal("%d %v", status, err)
+	} else {
+		log.Info("message sent")
+	}
+}
+
+func doInbox(server *api.API) {
+	if receiver != "" {
+		sendMessage()
 	} else if inbox {
+		// just show the inbox
 		if id == 0 {
 			log.Info("fetching inbox ...")
 			if box, err := server.Client.Inbox(page); err != nil {
@@ -127,6 +158,19 @@ func doInbox(server *api.API) {
 			} else {
 				showMessage(msg)
 				_, _ = server.Client.MarkInboxMessage(id, "seen")
+			}
+		}
+	}
+}
+
+func inboxMain() {
+	if inbox {
+		doInbox(server)
+		if loop {
+			ticker := time.NewTicker(time.Duration(loopPeriod) * time.Second)
+			for _ = range ticker.C {
+				clearScreen()
+				doInbox(server)
 			}
 		}
 		os.Exit(0)

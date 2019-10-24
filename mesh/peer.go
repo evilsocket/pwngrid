@@ -12,6 +12,7 @@ import (
 	"github.com/evilsocket/pwngrid/wifi"
 	"github.com/google/gopacket/layers"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,8 @@ import (
 
 var (
 	SignalingPeriod = 300
+
+	fingValidator = regexp.MustCompile("^[a-fA-F0-9]{64}$")
 )
 
 type SessionID []byte
@@ -26,8 +29,11 @@ type SessionID []byte
 type Peer struct {
 	sync.Mutex
 
-	DetectedAt   time.Time
-	SeenAt       time.Time
+	MetAt        time.Time // first time met
+	DetectedAt   time.Time // first time detected on this session
+	SeenAt       time.Time // last time detected on this session
+	PrevSeenAt   time.Time // if we met this unit before, this is the last time it's been seen
+	Encounters   uint64
 	Channel      int
 	RSSI         int
 	SessionID    SessionID
@@ -41,20 +47,12 @@ type Peer struct {
 	stop       chan struct{}
 }
 
-type jsonPeer struct {
-	DetectedAt    time.Time              `json:"detected_at"`
-	SeenAt        time.Time              `json:"seen_at"`
-	Channel       int                    `json:"channel"`
-	RSSI          int                    `json:"rssi"`
-	SessionID     string                 `json:"session_id"`
-	Advertisement map[string]interface{} `json:"advertisement"`
-}
-
 func MakeLocalPeer(name string, keys *crypto.KeyPair) *Peer {
 	now := time.Now()
 	peer := &Peer{
 		DetectedAt: now,
 		SeenAt:     now,
+		PrevSeenAt: now,
 		SessionID:  make([]byte, 6),
 		Keys:       keys,
 		AdvData:    sync.Map{},
@@ -105,6 +103,7 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 	peer = &Peer{
 		DetectedAt: now,
 		SeenAt:     now,
+		PrevSeenAt: now,
 		Channel:    wifi.Freq2Chan(int(radiotap.ChannelFrequency)),
 		RSSI:       int(radiotap.DBMAntennaSignal),
 		SessionID:  SessionID(dot11.Address3),
@@ -121,6 +120,8 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 	fingerprint, found := adv["identity"].(string)
 	if !found {
 		return nil, fmt.Errorf("peer %x is not advertising any identity", peer.SessionID)
+	} else if !fingValidator.MatchString(fingerprint) {
+		return nil, fmt.Errorf("peer %x is advertising an invalid fingerprint: %s", peer.SessionID, fingerprint)
 	}
 
 	if pubKey64, found := adv["public_key"]; found {
@@ -170,32 +171,13 @@ func NewPeer(radiotap *layers.RadioTap, dot11 *layers.Dot11, adv map[string]inte
 		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
 			return nil, fmt.Errorf("peer %x signature is invalid", peer.SessionID)
 		}
-	 */
+	*/
 
 	for key, value := range adv {
 		peer.AdvData.Store(key, value)
 	}
 
 	return peer, nil
-}
-
-func (peer *Peer) MarshalJSON() ([]byte, error) {
-	peer.Lock()
-	defer peer.Unlock()
-
-	doc := jsonPeer{
-		DetectedAt:    peer.DetectedAt,
-		SeenAt:        peer.SeenAt,
-		Channel:       peer.Channel,
-		RSSI:          peer.RSSI,
-		SessionID:     peer.SessionIDStr,
-		Advertisement: make(map[string]interface{}),
-	}
-	peer.AdvData.Range(func(key, value interface{}) bool {
-		doc.Advertisement[key.(string)] = value
-		return true
-	})
-	return json.Marshal(doc)
 }
 
 func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[string]interface{}) (err error) {
@@ -241,7 +223,7 @@ func (peer *Peer) Update(radio *layers.RadioTap, dot11 *layers.Dot11, adv map[st
 		if err = peer.Keys.VerifyMessage(signedData, signature); err != nil {
 			return fmt.Errorf("peer %x signature is invalid", peer.SessionID)
 		}
-	 */
+	*/
 
 	peer.Channel = wifi.Freq2Chan(int(radio.ChannelFrequency))
 	peer.RSSI = int(radio.DBMAntennaSignal)

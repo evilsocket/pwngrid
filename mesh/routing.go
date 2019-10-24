@@ -14,7 +14,7 @@ import (
 
 var (
 	Workers = 0
-	PeerTTL = 300
+	PeerTTL = 1800
 	Peers   = sync.Map{}
 )
 
@@ -27,10 +27,15 @@ type Router struct {
 	mux        *PacketMuxer
 	onNewPeer  PeerActivityCallback
 	onPeerLost PeerActivityCallback
-	streams    sync.Map
+	memory     *Memory
 }
 
-func StartRouting(iface string, local *Peer) (*Router, error) {
+func StartRouting(iface string, peersPath string, local *Peer) (*Router, error) {
+	err, memory := MemoryFromPath(peersPath)
+	if err != nil {
+		return nil, err
+	}
+
 	filter := fmt.Sprintf("type mgt subtype beacon and ether src %s", wifi.SignatureAddrStr)
 	mux, err := NewPacketMuxer(iface, filter, Workers)
 	if err != nil {
@@ -40,18 +45,26 @@ func StartRouting(iface string, local *Peer) (*Router, error) {
 	router := &Router{
 		mux:        mux,
 		local:      local,
+		memory:     memory,
 		onNewPeer:  dummyPeerActivityCallback,
 		onPeerLost: dummyPeerActivityCallback,
-		streams:    sync.Map{},
 	}
 	mux.OnPacket(router.onPacket)
 	mux.Start()
 
-	log.Info("started beacon discovery and message routing")
+	log.Info("started beacon discovery and message routing (%d known peers)", router.memory.Size())
 
 	go router.peersPruner()
 
 	return router, nil
+}
+
+func (router *Router) Memory() []*Peer {
+	return router.memory.List()
+}
+
+func (router *Router) MemoryOf(fingerprint string) *Peer {
+	return router.memory.Of(fingerprint)
 }
 
 func (router *Router) OnNewPeer(cb PeerActivityCallback) {
@@ -88,6 +101,11 @@ func (router *Router) peersPruner() {
 	}
 }
 
+func (router *Router) newPeer(ident string, peer *Peer) {
+	Peers.Store(ident, peer)
+	router.onNewPeer(ident, peer)
+}
+
 func (router *Router) onPeerAdvertisement(pkt gopacket.Packet, radio *layers.RadioTap, dot11 *layers.Dot11) {
 	err, payload := wifi.Unpack(pkt, radio, dot11)
 	if err != nil {
@@ -107,18 +125,27 @@ func (router *Router) onPeerAdvertisement(pkt gopacket.Packet, radio *layers.Rad
 		return
 	}
 
-	if _peer, existing := Peers.Load(ident); existing {
-		peer := _peer.(*Peer)
+	var peer *Peer
+
+	_peer, existing := Peers.Load(ident)
+	if existing {
+		peer = _peer.(*Peer)
 		if err := peer.Update(radio, dot11, advData); err != nil {
 			log.Warning("error updating peer %s: %v", peer.ID(), err)
+		} else if err := router.memory.Track(ident.(string), peer); err != nil {
+			log.Error("error saving peer encounter for %s: %v", ident, err)
 		}
-	} else if peer, err := NewPeer(radio, dot11, advData); err != nil {
-		log.Debug("error creating peer: %v", err)
-		return
 	} else {
-		Peers.Store(ident, peer)
-		router.onNewPeer(ident.(string), peer)
+		if peer, err = NewPeer(radio, dot11, advData); err != nil {
+			log.Debug("error creating peer: %v", err)
+			return
+		} else if err := router.memory.Track(ident.(string), peer); err != nil {
+			log.Error("error saving peer encounter for %s: %v", ident, err)
+		} else {
+			router.newPeer(ident.(string), peer)
+		}
 	}
+
 }
 
 func (router *Router) onPacket(pkt gopacket.Packet) {
