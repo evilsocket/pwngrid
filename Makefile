@@ -6,7 +6,7 @@ all: clean
 	@ls -la build/pwngrid
 
 install:
-	@cp pwngrid /usr/local/bin/
+	@cp build/pwngrid /usr/local/bin/
 	@mkdir -p /etc/systemd/system/
 	@cp pwngrid.service /etc/systemd/system/
 	@mkdir -p /etc/pwngrid/
