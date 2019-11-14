@@ -24,7 +24,7 @@ addons:
 
 cross: &cross
   before_install:
-  - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
+  - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b4_amd64.deb"
   - sudo dpkg -i "qemu.deb"
   install:
   - sudo builder/arm_builder.sh pwngrid make -e TARGET="${OUTPUT}"
