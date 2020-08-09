@@ -3,15 +3,28 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/evilsocket/islazy/log"
 	"os"
 	"reflect"
+	"sync"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/evilsocket/islazy/log"
 )
 
 const (
 	TokenTTL = time.Minute * 30
+	CacheTTL = time.Minute * 120
+)
+
+type cachedCounter struct {
+	Time  time.Time
+	Count int
+}
+
+var (
+	cache     = make(map[uint]*cachedCounter)
+	cacheLock = sync.Mutex{}
 )
 
 type Unit struct {
@@ -127,6 +140,22 @@ type unitJSON struct {
 }
 
 func (u *Unit) MarshalJSON() ([]byte, error) {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	count := -1
+	if cnt, found := cache[u.ID]; found && time.Since(cnt.Time) < CacheTTL {
+		count = cnt.Count
+	}
+
+	if count != -1 {
+		count = db.Model(u).Association("AccessPoints").Count()
+		cache[u.ID] = &cachedCounter{
+			Time:  time.Now(),
+			Count: count,
+		}
+	}
+
 	doc := unitJSON{
 		EnrolledAt:  u.CreatedAt,
 		UpdatedAt:   u.UpdatedAt,
@@ -135,7 +164,7 @@ func (u *Unit) MarshalJSON() ([]byte, error) {
 		Fingerprint: u.Fingerprint,
 		PublicKey:   u.PublicKey,
 		Data:        map[string]interface{}{},
-		Networks:    db.Model(u).Association("AccessPoints").Count(),
+		Networks:    count,
 	}
 
 	if u.Data != "" {
