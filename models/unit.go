@@ -139,7 +139,7 @@ type unitJSON struct {
 	Networks    int                    `json:"networks"`
 }
 
-func (u *Unit) MarshalJSON() ([]byte, error) {
+func (u *Unit) apCounter() int {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
@@ -148,7 +148,7 @@ func (u *Unit) MarshalJSON() ([]byte, error) {
 		count = cnt.Count
 	}
 
-	if count != -1 {
+	if count == -1 {
 		count = db.Model(u).Association("AccessPoints").Count()
 		cache[u.ID] = &cachedCounter{
 			Time:  time.Now(),
@@ -156,6 +156,10 @@ func (u *Unit) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	return count
+}
+
+func (u *Unit) MarshalJSON() ([]byte, error) {
 	doc := unitJSON{
 		EnrolledAt:  u.CreatedAt,
 		UpdatedAt:   u.UpdatedAt,
@@ -164,7 +168,7 @@ func (u *Unit) MarshalJSON() ([]byte, error) {
 		Fingerprint: u.Fingerprint,
 		PublicKey:   u.PublicKey,
 		Data:        map[string]interface{}{},
-		Networks:    count,
+		Networks:    u.apCounter(),
 	}
 
 	if u.Data != "" {
